@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="DCMS.Application/DCMS.Application.csproj" />
+  <Project Path="DCMS.Domain/DCMS.Domain.csproj" />
+  <Project Path="DCMS.Infrastructure/DCMS.Infrastructure.csproj" />
+  <Project Path="DCMS.WebAPI/DCMS.WebAPI.csproj" />
+</Solution>
