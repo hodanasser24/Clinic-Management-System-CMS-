@@ -1,5 +1,7 @@
+using DCMS.Domain.Entities;
+
 namespace DCMS.Domain.Interfaces.Repositories;
 
-public interface IAppointmentRepository
+public interface IAppointmentRepository : IGenericRepository<Appointment>
 {
 }
