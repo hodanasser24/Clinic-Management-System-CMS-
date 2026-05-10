@@ -1,10 +1,10 @@
-using DCMS.Application.DTOs;
+using DCMS.Application.DTOs.Contacts;
 using DCMS.Domain.Enums;
 using FluentValidation;
 
 namespace DCMS.Application.Validators;
 
-public class CreateContactMessageValidator : AbstractValidator<CreateContactMessageRequest>
+public class CreateContactMessageValidator : AbstractValidator<CreateContactMessageRequestDto>
 {
     public CreateContactMessageValidator()
     {
@@ -30,7 +30,7 @@ public class CreateContactMessageValidator : AbstractValidator<CreateContactMess
     }
 }
 
-public class ReplyContactMessageValidator : AbstractValidator<ReplyContactMessageRequest>
+public class ReplyContactMessageValidator : AbstractValidator<ReplyContactMessageRequestDto>
 {
     public ReplyContactMessageValidator()
     {
@@ -40,7 +40,7 @@ public class ReplyContactMessageValidator : AbstractValidator<ReplyContactMessag
     }
 }
 
-public class UpdateContactMessageStatusValidator : AbstractValidator<UpdateContactMessageStatusRequest>
+public class UpdateContactMessageStatusValidator : AbstractValidator<UpdateContactMessageStatusRequestDto>
 {
     public UpdateContactMessageStatusValidator()
     {
@@ -49,7 +49,7 @@ public class UpdateContactMessageStatusValidator : AbstractValidator<UpdateConta
     }
 }
 
-public class ContactMessageFilterValidator : AbstractValidator<ContactMessageFilterRequest>
+public class ContactMessageFilterValidator : AbstractValidator<ContactMessageFilterRequestDto>
 {
     public ContactMessageFilterValidator()
     {

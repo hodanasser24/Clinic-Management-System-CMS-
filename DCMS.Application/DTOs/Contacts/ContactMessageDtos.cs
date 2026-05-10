@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using DCMS.Domain.Enums;
 
-namespace DCMS.Application.DTOs;
+namespace DCMS.Application.DTOs.Contacts;
 
 // ── Requests ────────────────────────────────────────────────────────────────
 
-public class CreateContactMessageRequest
+public class CreateContactMessageRequestDto
 {
     public string SenderName   { get; set; } = string.Empty;
     public string SenderEmail  { get; set; } = string.Empty;
@@ -15,12 +15,12 @@ public class CreateContactMessageRequest
     public ContactMessageType  Type { get; set; } = ContactMessageType.General;
 }
 
-public class ReplyContactMessageRequest
+public class ReplyContactMessageRequestDto
 {
     public string ReplyBody { get; set; } = string.Empty;
 }
 
-public class UpdateContactMessageStatusRequest
+public class UpdateContactMessageStatusRequestDto
 {
     public ContactMessageStatus Status { get; set; }
 }
@@ -31,7 +31,7 @@ public class UpdateContactMessageStatusRequest
 /// Query object for GetByType – all fields are optional.
 /// Passing no Type returns all messages (admin convenience).
 /// </summary>
-public class ContactMessageFilterRequest
+public class ContactMessageFilterRequestDto
 {
     /// <summary>Filter by message type. Null = return all types.</summary>
     public ContactMessageType? Type { get; set; }
@@ -55,7 +55,7 @@ public class ContactMessageFilterRequest
 
 // ── Responses ────────────────────────────────────────────────────────────────
 
-public class ContactMessageResponse
+public class ContactMessageResponseDto
 {
     public int    Id          { get; set; }
     public string SenderName  { get; set; } = string.Empty;
@@ -77,7 +77,7 @@ public class ContactMessageResponse
     public DateTime UpdatedAt { get; set; }
 }
 
-public class ContactMessageSummaryResponse
+public class ContactMessageSummaryResponseDto
 {
     public int    Id          { get; set; }
     public string SenderName  { get; set; } = string.Empty;
@@ -90,9 +90,9 @@ public class ContactMessageSummaryResponse
     public bool     HasReply  { get; set; }
 }
 
-public class PagedContactMessageResponse
+public class PagedContactMessageResponseDto
 {
-    public IEnumerable<ContactMessageSummaryResponse> Items      { get; set; } = [];
+    public IEnumerable<ContactMessageSummaryResponseDto> Items      { get; set; } = [];
     public int TotalCount { get; set; }
     public int Page       { get; set; }
     public int PageSize   { get; set; }

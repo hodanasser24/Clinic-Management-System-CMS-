@@ -50,7 +50,8 @@ public class ExpireScheduleChangeRequestsJob
             await _notificationService.SendToRoleAsync(
                 UserRole.Admin, NotificationType.ScheduleChangeExpired, NotificationPriority.Normal,
                 "Schedule Change Request Expired",
-                $"Schedule change request #{request.Id} has expired.", ct);
+                $"Schedule change request #{request.Id} has expired.",
+                request.Id, "ScheduleChangeRequest", ct);
         }
 
         if (count > 0)

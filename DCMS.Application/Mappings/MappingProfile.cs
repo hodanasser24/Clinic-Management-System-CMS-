@@ -1,5 +1,19 @@
 using AutoMapper;
-using DCMS.Application.DTOs;
+using DCMS.Application.DTOs.Appointments;
+using DCMS.Application.DTOs.Branches;
+using DCMS.Application.DTOs.Contacts;
+using DCMS.Application.DTOs.DentalChart;
+using DCMS.Application.DTOs.FAQs;
+using DCMS.Application.DTOs.ModificationRequests;
+using DCMS.Application.DTOs.Notifications;
+using DCMS.Application.DTOs.Offers;
+using DCMS.Application.DTOs.Owner;
+using DCMS.Application.DTOs.Prescriptions;
+using DCMS.Application.DTOs.Profile;
+using DCMS.Application.DTOs.Reports;
+using DCMS.Application.DTOs.Schedules;
+using DCMS.Application.DTOs.Services;
+using DCMS.Application.DTOs.SystemLogs;
 using DCMS.Domain.Entities;
 using DCMS.Domain.Enums;
 
@@ -10,7 +24,7 @@ public class MappingProfile : Profile
     public MappingProfile()
     {
         // ── ContactMessage ────────────────────────────────────────────────────
-        CreateMap<ContactMessage, ContactMessageResponse>()
+        CreateMap<ContactMessage, ContactMessageResponseDto>()
             .ForMember(d => d.TypeLabel,   o => o.MapFrom(s => s.Type.ToString()))
             .ForMember(d => d.StatusLabel, o => o.MapFrom(s => s.Status.ToString()))
             .ForMember(d => d.RepliedBy,   o => o.MapFrom(s =>
@@ -18,12 +32,12 @@ public class MappingProfile : Profile
                     ? null
                     : s.RepliedByUser.FullName));
 
-        CreateMap<ContactMessage, ContactMessageSummaryResponse>()
+        CreateMap<ContactMessage, ContactMessageSummaryResponseDto>()
             .ForMember(d => d.TypeLabel,   o => o.MapFrom(s => s.Type.ToString()))
             .ForMember(d => d.StatusLabel, o => o.MapFrom(s => s.Status.ToString()))
             .ForMember(d => d.HasReply,    o => o.MapFrom(s => s.ReplyBody != null));
 
-        CreateMap<CreateContactMessageRequest, ContactMessage>()
+        CreateMap<CreateContactMessageRequestDto, ContactMessage>()
             .ForMember(d => d.SenderEmail, o => o.MapFrom(s => s.SenderEmail.Trim().ToLower()))
             .ForMember(d => d.SenderName,  o => o.MapFrom(s => s.SenderName.Trim()))
             .ForMember(d => d.Subject,     o => o.MapFrom(s => s.Subject.Trim()))
@@ -32,119 +46,126 @@ public class MappingProfile : Profile
             .ForMember(d => d.IsArchived,  o => o.MapFrom(_ => false));
 
         // ── Appointment ───────────────────────────────────────────────────────
-        CreateMap<Appointment, AppointmentResponse>()
+        CreateMap<Appointment, AppointmentResponseDto>()
             .ForMember(d => d.PatientName,     o => o.MapFrom(s => s.Patient == null ? "" : s.Patient.FullName))
             .ForMember(d => d.DoctorName,      o => o.MapFrom(s => s.Doctor == null ? "" : s.Doctor.FullName))
             .ForMember(d => d.ServiceName,     o => o.MapFrom(s => s.Service == null ? "" : s.Service.Name))
-            .ForMember(d => d.BranchName,      o => o.MapFrom(s => s.Branch == null ? "" : s.Branch.Name))
-            .ForMember(d => d.StatusLabel,     o => o.MapFrom(s => s.Status.ToString()))
-            .ForMember(d => d.IsUrgent,        o => o.MapFrom(s => s.IsUrgent));
+            .ForMember(d => d.BranchName,      o => o.MapFrom(s => s.Branch == null ? "" : s.Branch.Name));
 
-        CreateMap<CreateAppointmentRequest, Appointment>()
+        CreateMap<Appointment, AppointmentSummaryDto>()
+            .ForMember(d => d.PatientName,     o => o.MapFrom(s => s.Patient == null ? "" : s.Patient.FullName))
+            .ForMember(d => d.DoctorName,      o => o.MapFrom(s => s.Doctor == null ? "" : s.Doctor.FullName))
+            .ForMember(d => d.ServiceName,     o => o.MapFrom(s => s.Service == null ? "" : s.Service.Name))
+            .ForMember(d => d.BranchName,      o => o.MapFrom(s => s.Branch == null ? "" : s.Branch.Name));
+
+        CreateMap<AppointmentRequestDto, Appointment>()
             .ForMember(d => d.Status, o => o.MapFrom(_ => AppointmentStatus.Pending))
             .ForMember(d => d.IsUrgent, o => o.MapFrom(_ => false));
 
-        // ── ApplicationUser / Doctor / Patient ────────────────────────────────
-        CreateMap<User, UserSummaryResponse>()
-            .ForMember(d => d.FullName, o => o.MapFrom(s => s.FullName))
-            .ForMember(d => d.RoleLabel, o => o.MapFrom(s => s.Role.ToString()));
+        // ── ApplicationUser / Doctor / Patient / Admin / Owner ────────────────
+        CreateMap<User, AccountResponseDto>();
+        CreateMap<Doctor, DoctorAccountResponseDto>();
+        
+        CreateMap<Doctor, DoctorProfileResponseDto>();
+        CreateMap<Patient, PatientProfileResponseDto>();
 
-        CreateMap<User, DoctorProfileResponse>()
-            .ForMember(d => d.FullName, o => o.MapFrom(s => s.FullName));
-
-        CreateMap<User, PatientProfileResponse>()
-            .ForMember(d => d.FullName, o => o.MapFrom(s => s.FullName));
-
-        CreateMap<UpdateDoctorProfileRequest, User>()
+        CreateMap<UpdateDoctorSelfProfileRequestDto, Doctor>()
             .ForAllMembers(o => o.Condition((_, _, srcMember) => srcMember != null));
 
-        CreateMap<UpdatePatientProfileRequest, User>()
+        CreateMap<UpdatePatientProfileRequestDto, Patient>()
+            .ForAllMembers(o => o.Condition((_, _, srcMember) => srcMember != null));
+
+        CreateMap<UpdateDoctorProfileRequestDto, Doctor>()
             .ForAllMembers(o => o.Condition((_, _, srcMember) => srcMember != null));
 
         // ── Schedule ──────────────────────────────────────────────────────────
-        CreateMap<Schedule, ScheduleResponse>()
+        CreateMap<Schedule, ScheduleResponseDto>()
             .ForMember(d => d.DoctorName, o => o.MapFrom(s =>
                 s.Doctor == null ? "" : s.Doctor.FullName))
             .ForMember(d => d.BranchName, o => o.MapFrom(s =>
-                s.Branch == null ? "" : s.Branch.Name))
-            .ForMember(d => d.DayLabel,   o => o.MapFrom(s => s.DayOfWeek.ToString()));
+                s.Branch == null ? "" : s.Branch.Name));
 
-        CreateMap<CreateScheduleRequest, Schedule>();
+        CreateMap<CreateScheduleRequestDto, Schedule>();
 
-        CreateMap<ScheduleChangeRequest, ScheduleChangeRequestResponse>()
-            .ForMember(d => d.DoctorName, o => o.MapFrom(s =>
-                s.Doctor == null ? "" : s.Doctor.FullName))
-            .ForMember(d => d.StatusLabel, o => o.MapFrom(s => s.Status.ToString()));
+        CreateMap<ScheduleChangeRequest, ScheduleChangeRequestResponseDto>()
+            .ForMember(d => d.RequestingDoctorName, o => o.MapFrom(s =>
+                s.RequestingDoctor == null ? "" : s.RequestingDoctor.FullName));
 
         // ── Service ───────────────────────────────────────────────────────────
-        CreateMap<Service, ServiceResponse>()
-            .ForMember(d => d.CategoryLabel, o => o.MapFrom(s => s.Category.ToString()));
-
-        CreateMap<CreateServiceRequest, Service>();
-        CreateMap<UpdateServiceRequest, Service>()
+        CreateMap<Service, ServiceResponseDto>();
+        CreateMap<CreateServiceRequestDto, Service>();
+        CreateMap<UpdateServiceRequestDto, Service>()
             .ForAllMembers(o => o.Condition((_, _, srcMember) => srcMember != null));
 
-        // ── ServiceModificationRequest ─────────────────────────────────────────
+        // ── ModificationRequests ──────────────────────────────────────────────
         CreateMap<ServiceModificationRequest, ServiceModificationRequestResponseDto>()
-            .ForMember(d => d.ProposedName,  o => o.MapFrom(s => s.ProposedName))
-            // Adjust to proper DTO map later if needed. The provided map used wrong DTO names.
-            ;
+            .ForMember(d => d.AdminName, o => o.MapFrom(s => s.Admin.FullName))
+            .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName));
+
+        CreateMap<FAQModificationRequest, FAQModificationRequestResponseDto>()
+            .ForMember(d => d.AdminName, o => o.MapFrom(s => s.Admin.FullName))
+            .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName));
+
+        CreateMap<OfferDiscountModificationRequest, OfferDiscountModificationRequestResponseDto>()
+            .ForMember(d => d.AdminName, o => o.MapFrom(s => s.Admin.FullName))
+            .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName));
+
+        CreateMap<BranchModificationRequest, BranchModificationRequestResponseDto>()
+            .ForMember(d => d.AdminName, o => o.MapFrom(s => s.Admin.FullName))
+            .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.FullName));
 
         // ── Report ────────────────────────────────────────────────────────────
-        CreateMap<Report, ReportResponse>()
+        CreateMap<Report, ReportResponseDto>()
             .ForMember(d => d.PatientName, o => o.MapFrom(s =>
                 s.Patient == null ? "" : s.Patient.FullName))
             .ForMember(d => d.DoctorName,  o => o.MapFrom(s =>
                 s.Doctor  == null ? "" : s.Doctor.FullName));
+
+        CreateMap<Report, DoctorReportResponseDto>()
+            .IncludeBase<Report, ReportResponseDto>();
 
         CreateMap<CreateReportRequestDto,  Report>();
         CreateMap<UpdateReportRequestDto,  Report>()
             .ForAllMembers(o => o.Condition((_, _, srcMember) => srcMember != null));
 
-        CreateMap<ToothRecord, ToothRecordResponseDto>()
-            .ForMember(d => d.ToothStatus, o => o.MapFrom(s => s.ToothStatus));
+        CreateMap<ToothRecord, ToothRecordResponseDto>();
 
         // ── Prescription ──────────────────────────────────────────────────────
-        CreateMap<Prescription, PrescriptionResponse>()
-            .ForMember(d => d.PatientName, o => o.MapFrom(s =>
-                s.Patient == null ? "" : s.Patient.FullName))
-            .ForMember(d => d.DoctorName,  o => o.MapFrom(s =>
-                s.Doctor  == null ? "" : s.Doctor.FullName));
+        CreateMap<Prescription, PrescriptionResponseDto>()
+            .ForMember(d => d.PatientId, o => o.MapFrom(s => s.Report.PatientId))
+            .ForMember(d => d.DoctorId,  o => o.MapFrom(s => s.Report.DoctorId));
 
-        CreateMap<PrescriptionItem, PrescriptionItemResponse>();
-        CreateMap<CreatePrescriptionRequest, Prescription>();
-        CreateMap<PrescriptionItemRequest, PrescriptionItem>();
+        CreateMap<PrescriptionItem, PrescriptionItemResponseDto>();
+        CreateMap<CreatePrescriptionRequestDto, Prescription>();
+        CreateMap<CreatePrescriptionItemRequestDto, PrescriptionItem>();
 
         // ── Notification ──────────────────────────────────────────────────────
-        CreateMap<Notification, NotificationResponse>()
-            .ForMember(d => d.TypeLabel, o => o.MapFrom(s => s.Type.ToString()));
+        CreateMap<Notification, NotificationResponseDto>();
 
         // ── Branch ────────────────────────────────────────────────────────────
-        CreateMap<Branch, BranchResponse>();
-        CreateMap<CreateBranchRequest, Branch>();
-        CreateMap<UpdateBranchRequest, Branch>()
+        CreateMap<Branch, BranchResponseDto>();
+        CreateMap<CreateBranchRequestDto, Branch>();
+        CreateMap<UpdateBranchRequestDto, Branch>()
             .ForAllMembers(o => o.Condition((_, _, srcMember) => srcMember != null));
 
         // ── Offer ─────────────────────────────────────────────────────────────
-        CreateMap<OfferDiscount, OfferResponse>()
-            .ForMember(d => d.StatusLabel, o => o.MapFrom(s => s.IsActive ? "Active" : "Inactive"));
+        CreateMap<OfferDiscount, OfferDiscountResponseDto>()
+            .ForMember(d => d.BranchName,  o => o.MapFrom(s => s.Branch == null ? "" : s.Branch.Name))
+            .ForMember(d => d.ServiceName, o => o.MapFrom(s => s.Service == null ? "" : s.Service.Name));
 
-        CreateMap<CreateOfferRequest,  OfferDiscount>();
-        CreateMap<UpdateOfferRequest,  OfferDiscount>()
+        CreateMap<OfferDiscount, OfferStatusResponseDto>()
+            .ForMember(d => d.BranchName, o => o.MapFrom(s => s.Branch == null ? "" : s.Branch.Name));
+
+        CreateMap<CreateOfferDiscountRequestDto, OfferDiscount>();
+        CreateMap<UpdateOfferDiscountRequestDto, OfferDiscount>()
             .ForAllMembers(o => o.Condition((_, _, srcMember) => srcMember != null));
 
         // ── FAQ ───────────────────────────────────────────────────────────────
-        CreateMap<FAQ, FaqResponse>();
-        CreateMap<CreateFaqRequest, FAQ>();
+        CreateMap<FAQ, FAQResponseDto>();
+        CreateMap<CreateFAQRequestDto, FAQ>();
+        CreateMap<UpdateFAQRequestDto, FAQ>();
 
         // ── SystemLog ─────────────────────────────────────────────────────────
         CreateMap<SystemLog, SystemLogResponseDto>();
-
-        // ── Revenue ───────────────────────────────────────────────────────────
-        CreateMap<Revenue, RevenueEntryResponse>()
-            .ForMember(d => d.AppointmentId, o => o.MapFrom(s => s.AppointmentId))
-            .ForMember(d => d.ServiceName,   o => o.MapFrom(s =>
-                s.Appointment != null && s.Appointment.Service != null
-                    ? s.Appointment.Service.Name : ""));
     }
 }

@@ -154,7 +154,7 @@ public class PrescriptionService : IPrescriptionService
             sb.AppendLine($"   Dosage    : {item.Dosage}");
             sb.AppendLine($"   Frequency : {item.Frequency}");
             if (!string.IsNullOrEmpty(item.Duration))      sb.AppendLine($"   Duration  : {item.Duration}");
-            if (!string.IsNullOrEmpty(item.Route))         sb.AppendLine($"   Route     : {item.Route}");
+            sb.AppendLine($"   Route     : {item.Route}");
             if (!string.IsNullOrEmpty(item.Notes))         sb.AppendLine($"   Notes     : {item.Notes}");
             sb.AppendLine();
         }

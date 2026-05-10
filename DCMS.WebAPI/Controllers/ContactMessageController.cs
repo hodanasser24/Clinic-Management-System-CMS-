@@ -1,4 +1,4 @@
-using DCMS.Application.DTOs;
+using DCMS.Application.DTOs.Contacts;
 using DCMS.Application.Interfaces;
 using DCMS.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -30,10 +30,10 @@ public class ContactMessageController : ControllerBase
     /// </summary>
     [HttpPost]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ContactMessageResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ContactMessageResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
-        [FromBody] CreateContactMessageRequest request,
+        [FromBody] CreateContactMessageRequestDto request,
         CancellationToken ct)
     {
         var result = await _service.CreateAsync(request, ct);
@@ -48,9 +48,9 @@ public class ContactMessageController : ControllerBase
     /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(PagedContactMessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedContactMessageResponseDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
-        [FromQuery] ContactMessageFilterRequest filter,
+        [FromQuery] ContactMessageFilterRequestDto filter,
         CancellationToken ct)
     {
         var result = await _service.GetAllAsync(filter, ct);
@@ -65,10 +65,10 @@ public class ContactMessageController : ControllerBase
     /// </summary>
     [HttpGet("by-type")]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(PagedContactMessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedContactMessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetByType(
-        [FromQuery] ContactMessageFilterRequest filter,
+        [FromQuery] ContactMessageFilterRequestDto filter,
         CancellationToken ct)
     {
         // Guard: type must be supplied for this dedicated endpoint
@@ -88,7 +88,7 @@ public class ContactMessageController : ControllerBase
     /// </summary>
     [HttpGet("{id:int}")]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(ContactMessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ContactMessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
@@ -102,12 +102,12 @@ public class ContactMessageController : ControllerBase
     /// </summary>
     [HttpPost("{id:int}/reply")]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(ContactMessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ContactMessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Reply(
         int id,
-        [FromBody] ReplyContactMessageRequest request,
+        [FromBody] ReplyContactMessageRequestDto request,
         CancellationToken ct)
     {
         var userId = _currentUser.UserId
@@ -123,12 +123,12 @@ public class ContactMessageController : ControllerBase
     /// </summary>
     [HttpPatch("{id:int}/status")]
     [Authorize(Roles = "Admin,Owner")]
-    [ProducesResponseType(typeof(ContactMessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ContactMessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateStatus(
         int id,
-        [FromBody] UpdateContactMessageStatusRequest request,
+        [FromBody] UpdateContactMessageStatusRequestDto request,
         CancellationToken ct)
     {
         var result = await _service.UpdateStatusAsync(id, request, ct);

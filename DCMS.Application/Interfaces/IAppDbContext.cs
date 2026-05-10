@@ -38,9 +38,6 @@ public interface IAppDbContext
     DbSet<Notification>              Notifications           { get; }
     DbSet<ContactMessage>            ContactMessages         { get; }
 
-    // ── Financials ────────────────────────────────────────────────────────────
-    DbSet<Revenue>                   Revenues                { get; }
-
     // ── Logging ───────────────────────────────────────────────────────────────
     DbSet<SystemLog>                 SystemLogs              { get; }
 

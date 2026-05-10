@@ -91,7 +91,7 @@ public class AppointmentService : IAppointmentService
         var patient = await _uow.Patients.GetByIdAsync(dto.PatientId, ct);
         if (patient == null) throw new NotFoundException("Patient not found.");
 
-        var doctor = await _uow.Appointments.GetDoctorWithScheduleAsync(dto.DoctorId, dto.Date.DayOfWeek, ct);
+        var doctor = await _uow.Doctors.GetDoctorWithScheduleAsync(dto.DoctorId, dto.Date.DayOfWeek, ct);
         if (doctor == null) throw new NotFoundException("Doctor not found.");
 
         var schedule = await _uow.Schedules.GetByDoctorBranchDayAsync(dto.DoctorId, dto.BranchId, dto.Date.DayOfWeek, ct);
@@ -127,7 +127,8 @@ public class AppointmentService : IAppointmentService
         // Notify admin of new pending appointment
         await _notificationService.SendToRoleAsync(
             UserRole.Admin, NotificationType.AppointmentBooked, NotificationPriority.Normal,
-            "New Appointment Request", $"A new appointment request is pending confirmation.", ct);
+            "New Appointment Request", $"A new appointment request is pending confirmation.",
+            appointment.Id, "Appointment", ct);
 
         await _notificationService.SendAsync(
             dto.PatientId, NotificationType.AppointmentBooked, NotificationPriority.Normal,
@@ -274,7 +275,8 @@ public class AppointmentService : IAppointmentService
 
         await _notificationService.SendToRoleAsync(
             UserRole.Admin, NotificationType.AppointmentMarkedUrgent, NotificationPriority.High,
-            "Urgent Case Alert", $"Appointment #{appointment.Id} for patient has been flagged as urgent.", ct);
+            "Urgent Case Alert", $"Appointment #{appointment.Id} for patient has been flagged as urgent.",
+            appointment.Id, "Appointment", ct);
 
         return MapToResponse(appointment);
     }

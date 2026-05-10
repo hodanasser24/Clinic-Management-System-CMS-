@@ -233,7 +233,8 @@ public class ScheduleService : IScheduleService
 
         await _notificationService.SendToRoleAsync(
             UserRole.Admin, NotificationType.ScheduleChangeRequestRejected, NotificationPriority.Normal,
-            "Schedule Change Rejected", "A schedule change request was rejected.", ct);
+            "Schedule Change Rejected", "A schedule change request was rejected.",
+            request.Id, "ScheduleChangeRequest", ct);
 
         return MapToChangeRequestResponse(request);
     }
@@ -259,7 +260,8 @@ public class ScheduleService : IScheduleService
 
         await _notificationService.SendToRoleAsync(
             UserRole.Admin, NotificationType.ScheduleChangeRequestApproved, NotificationPriority.Normal,
-            "Schedule Change Approved", "A schedule change request was approved and applied.", ct);
+            "Schedule Change Approved", "A schedule change request was approved and applied.",
+            request.Id, "ScheduleChangeRequest", ct);
     }
 
     private static ScheduleResponseDto MapToResponse(Schedule s) => new()

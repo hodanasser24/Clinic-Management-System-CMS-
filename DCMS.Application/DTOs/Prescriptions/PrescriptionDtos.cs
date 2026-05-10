@@ -23,6 +23,8 @@ public class PrescriptionResponseDto
 {
     public int Id { get; set; }
     public int ReportId { get; set; }
+    public int PatientId { get; set; }
+    public int DoctorId { get; set; }
     public string? GeneralInstructions { get; set; }
     public List<PrescriptionItemResponseDto> Items { get; set; } = new();
     public DateTime CreatedAt { get; set; }

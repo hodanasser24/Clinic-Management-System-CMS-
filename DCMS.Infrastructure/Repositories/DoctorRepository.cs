@@ -11,4 +11,11 @@ public class DoctorRepository : GenericRepository<Doctor>, IDoctorRepository
 
     public async Task<Doctor?> GetByEmailAsync(string email, CancellationToken ct = default)
         => await _dbSet.FirstOrDefaultAsync(d => d.Email == email, ct);
+
+    public async Task<Doctor?> GetDoctorWithScheduleAsync(int doctorId, DayOfWeek day, CancellationToken ct = default)
+    {
+        return await _dbSet
+            .Include(d => d.Schedules.Where(s => s.DayOfWeek == day && s.IsActive))
+            .FirstOrDefaultAsync(d => d.Id == doctorId, ct);
+    }
 }

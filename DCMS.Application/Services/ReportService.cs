@@ -182,8 +182,8 @@ public class ReportService : IReportService
         if (r1.CreatedAt > r2.CreatedAt) (r1, r2) = (r2, r1);
 
         // Build tooth diff (dental chart evolution)
-        var teeth1 = (r1.DentalChart?.ToothRecords ?? []).ToDictionary(t => t.ToothNumber);
-        var teeth2 = (r2.DentalChart?.ToothRecords ?? []).ToDictionary(t => t.ToothNumber);
+        var teeth1 = (r1.Patient?.DentalChart?.ToothRecords ?? []).ToDictionary(t => t.ToothNumber);
+        var teeth2 = (r2.Patient?.DentalChart?.ToothRecords ?? []).ToDictionary(t => t.ToothNumber);
         var allTeeth = teeth1.Keys.Union(teeth2.Keys).OrderBy(n => n);
 
         var diffs = allTeeth.Select(tooth =>
@@ -193,11 +193,11 @@ public class ReportService : IReportService
             return new ToothDiffDto
             {
                 ToothNumber  = tooth,
-                BeforeStatus = before?.Status,
-                AfterStatus  = after?.Status,
-                BeforeLabel  = before?.Status.ToString(),
-                AfterLabel   = after?.Status.ToString(),
-                Changed      = before?.Status != after?.Status
+                BeforeStatus = before?.ToothStatus,
+                AfterStatus  = after?.ToothStatus,
+                BeforeLabel  = before?.ToothStatus.ToString(),
+                AfterLabel   = after?.ToothStatus.ToString(),
+                Changed      = before?.ToothStatus != after?.ToothStatus
             };
         }).ToList();
 
@@ -209,10 +209,10 @@ public class ReportService : IReportService
             ChangedCount  = diffs.Count(d => d.Changed),
             ImprovedCount = diffs.Count(d =>
                 d.Changed && d.AfterStatus is
-                    ToothStatus.Healthy or ToothStatus.Filled or ToothStatus.Crowned),
+                    ToothStatus.Healthy or ToothStatus.Filled or ToothStatus.CrownPlaced),
             WorsendCount  = diffs.Count(d =>
                 d.Changed && d.AfterStatus is
-                    ToothStatus.Extracted or ToothStatus.Missing or ToothStatus.Decayed),
+                    ToothStatus.Missing or ToothStatus.Decayed),
             DiagnosisChangeSummary = r1.Diagnosis == r2.Diagnosis
                 ? "No change in diagnosis."
                 : $"Diagnosis changed between report {r1.Id} and report {r2.Id}."

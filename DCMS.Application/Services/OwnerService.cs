@@ -1,5 +1,6 @@
 using DCMS.Application.DTOs.Common;
 using DCMS.Application.DTOs.Owner;
+using DCMS.Application.DTOs.Schedules;
 using DCMS.Application.Exceptions;
 using DCMS.Application.Interfaces;
 using DCMS.Domain.Entities;
@@ -177,7 +178,8 @@ public class OwnerService : IOwnerService
 
         await _notificationService.SendToRoleAsync(
             UserRole.Patient, NotificationType.OfferActivated, NotificationPriority.Normal,
-            "New Offer Available", $"A new offer '{offer.Title}' is now active!", ct);
+            "New Offer Available", $"A new offer '{offer.Title}' is now active!",
+            offer.Id, "OfferDiscount", ct);
 
         return MapToOfferResponse(offer);
     }
@@ -295,8 +297,8 @@ public class OwnerService : IOwnerService
         await _uow.SaveChangesAsync(ct);
 
         await _notificationService.SendAsync(
-            request.RequestingDoctorId, NotificationType.ScheduleChangeRequestRejected, NotificationPriority.Normal,
-            "Schedule Request Rejected", $"Your schedule change request was rejected. Reason: {reason}",
+            request.RequestingDoctorId, NotificationType.ScheduleChangeRequestRejected, NotificationPriority.High,
+            "Schedule Change Rejected", $"Your schedule change request for {request.RequestingDoctor.FullName} was rejected.",
             request.Id, "ScheduleChangeRequest", ct);
 
         return MapToScheduleChangeRequestResponse(request);
@@ -317,7 +319,7 @@ public class OwnerService : IOwnerService
     {
         Id = r.Id,
         RequestingDoctorId = r.RequestingDoctorId,
-        RequestingDoctorName = r.Doctor?.FullName ?? "Unknown",
+        RequestingDoctorName = r.RequestingDoctor?.FullName ?? "Unknown",
         ScheduleId = r.ScheduleId,
         ProposedDayOfWeek = r.ProposedDayOfWeek,
         ProposedStartTime = r.ProposedStartTime,
