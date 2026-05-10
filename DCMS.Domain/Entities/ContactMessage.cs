@@ -5,16 +5,22 @@ namespace DCMS.Domain.Entities;
 
 public class ContactMessage : BaseEntity
 {
-    public string Name { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Message { get; set; } = string.Empty;
+    public string SenderName  { get; set; } = string.Empty;
+    public string SenderEmail { get; set; } = string.Empty;
+    public string Subject     { get; set; } = string.Empty;
+    public string Body        { get; set; } = string.Empty;
 
-    public ContactMessageType Type { get; set; }
-    public ContactMessageStatus Status { get; set; } = ContactMessageStatus.New;
-    
-    public SenderType SenderType { get; set; }
-    public int? SenderId { get; set; } // Null for Guest
+    public ContactMessageType   Type   { get; set; } = ContactMessageType.General;
+    public ContactMessageStatus Status { get; set; } = ContactMessageStatus.Pending;
 
-    // Navigation property
-    public virtual Patient? Patient { get; set; } 
+    // Reply
+    public string? ReplyBody  { get; set; }
+    public DateTime? RepliedAt { get; set; }
+
+    // FK to the staff member who replied (nullable – may be replied by admin or owner)
+    public int? RepliedByUserId { get; set; }
+    public User? RepliedByUser { get; set; }
+
+    // Soft-delete / archive
+    public bool IsArchived { get; set; } = false;
 }

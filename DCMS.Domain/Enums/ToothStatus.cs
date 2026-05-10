@@ -5,5 +5,9 @@ public enum ToothStatus
     Healthy,
     Decayed,
     Filled,
-    Missing
+    Missing,
+    RootCanalTreated,
+    CrownPlaced,
+    NeedsExtraction,
+    UnderObservation
 }

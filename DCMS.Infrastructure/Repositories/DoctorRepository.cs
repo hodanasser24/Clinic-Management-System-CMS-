@@ -1,15 +1,14 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using DCMS.Domain.Entities;
 using DCMS.Domain.Interfaces.Repositories;
+using DCMS.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace DCMS.Infrastructure.Repositories;
 
-public class DoctorRepository : IDoctorRepository
+public class DoctorRepository : GenericRepository<Doctor>, IDoctorRepository
 {
-    public Task AddAsync(Doctor entity) => throw new System.NotImplementedException();
-    public void Delete(Doctor entity) => throw new System.NotImplementedException();
-    public Task<Doctor?> GetByIdAsync(int id) => throw new System.NotImplementedException();
-    public Task<IReadOnlyList<Doctor>> ListAllAsync() => throw new System.NotImplementedException();
-    public void Update(Doctor entity) => throw new System.NotImplementedException();
+    public DoctorRepository(ApplicationDbContext context) : base(context) { }
+
+    public async Task<Doctor?> GetByEmailAsync(string email, CancellationToken ct = default)
+        => await _dbSet.FirstOrDefaultAsync(d => d.Email == email, ct);
 }

@@ -14,6 +14,7 @@ public class Schedule : BaseEntity
 
     public int SessionDurationMinutes { get; set; }
     public int? BreakDurationMinutes { get; set; }
+    public bool IsActive { get; set; } = true;
 
     // Navigation Properties
     public virtual Doctor Doctor { get; set; } = null!;

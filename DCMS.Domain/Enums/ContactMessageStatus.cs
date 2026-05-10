@@ -2,8 +2,10 @@ namespace DCMS.Domain.Enums;
 
 public enum ContactMessageStatus
 {
-    New,
-    InProgress,
-    Resolved,
-    Closed
+    Pending    = 0,
+    Read       = 1,
+    InProgress = 2,
+    Replied    = 3,
+    Closed     = 4,
+    Archived   = 5
 }

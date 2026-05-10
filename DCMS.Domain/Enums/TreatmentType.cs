@@ -4,5 +4,12 @@ public enum TreatmentType
 {
     Cleaning,
     Filling,
-    Extraction
+    Extraction,
+    RootCanal,
+    Crown,
+    Bridge,
+    Implant,
+    Whitening,
+    Orthodontic,
+    Consultation
 }
