@@ -4,43 +4,48 @@ using Microsoft.EntityFrameworkCore;
 namespace DCMS.Application.Interfaces;
 
 /// <summary>
-/// Application-layer contract for the EF Core DbContext.
-/// Services depend on this interface – never on the concrete DbContext.
+/// Application-layer abstraction for the EF Core DbContext.
+/// Services depend only on this interface — never on the concrete ApplicationDbContext.
 /// </summary>
 public interface IAppDbContext
 {
-    // ── Identity / Users ─────────────────────────────────────────────────────
-    DbSet<User>                      Users                   { get; }
+    // ── User hierarchy ────────────────────────────────────────────────────
+    DbSet<User>    Users    { get; }
+    DbSet<Patient> Patients { get; }
+    DbSet<Doctor>  Doctors  { get; }
+    DbSet<Admin>   Admins   { get; }
+    DbSet<Guest>   Guests   { get; }
 
-    // ── Clinic Core ───────────────────────────────────────────────────────────
-    DbSet<Branch>                    Branches                { get; }
-    DbSet<Service>                   Services                { get; }
-    DbSet<OfferDiscount>             OfferDiscounts          { get; }
-    DbSet<FAQ>                       FAQs                    { get; }
+    // ── Clinic core ───────────────────────────────────────────────────────
+    DbSet<Branch>       Branches      { get; }
+    DbSet<Service>      Services      { get; }
+    DbSet<OfferDiscount> OfferDiscounts { get; }
+    DbSet<FAQ>          FAQs          { get; }
+    DbSet<Revenue>      Revenues      { get; }
 
-    // ── Appointments ──────────────────────────────────────────────────────────
-    DbSet<Appointment>               Appointments            { get; }
+    // ── Appointments & schedules ──────────────────────────────────────────
+    DbSet<Appointment>          Appointments          { get; }
+    DbSet<Schedule>             Schedules             { get; }
+    DbSet<ScheduleChangeRequest> ScheduleChangeRequests { get; }
 
-    // ── Schedules ─────────────────────────────────────────────────────────────
-    DbSet<Schedule>                  Schedules               { get; }
-    DbSet<ScheduleChangeRequest>     ScheduleChangeRequests  { get; }
+    // ── Modification requests ─────────────────────────────────────────────
+    DbSet<ServiceModificationRequest>        ServiceModificationRequests       { get; }
+    DbSet<FAQModificationRequest>            FAQModificationRequests           { get; }
+    DbSet<OfferDiscountModificationRequest>  OfferDiscountModificationRequests { get; }
+    DbSet<BranchModificationRequest>         BranchModificationRequests        { get; }
 
-    // ── Service Modification ──────────────────────────────────────────────────
-    DbSet<ServiceModificationRequest> ServiceModificationRequests { get; }
+    // ── Medical records ───────────────────────────────────────────────────
+    DbSet<Report>          Reports          { get; }
+    DbSet<Prescription>    Prescriptions    { get; }
+    DbSet<PrescriptionItem> PrescriptionItems { get; }
+    DbSet<DentalChart>     DentalCharts     { get; }
+    DbSet<ToothRecord>     ToothRecords     { get; }
 
-    // ── Medical Records ───────────────────────────────────────────────────────
-    DbSet<Report>                    Reports                 { get; }
-    DbSet<ToothRecord>               ToothRecords            { get; }
-    DbSet<Prescription>              Prescriptions           { get; }
-    DbSet<PrescriptionItem>          PrescriptionItems       { get; }
+    // ── Communication & logging ───────────────────────────────────────────
+    DbSet<Notification>   Notifications   { get; }
+    DbSet<ContactMessage> ContactMessages { get; }
+    DbSet<SystemLog>      SystemLogs      { get; }
 
-    // ── Communication ─────────────────────────────────────────────────────────
-    DbSet<Notification>              Notifications           { get; }
-    DbSet<ContactMessage>            ContactMessages         { get; }
-
-    // ── Logging ───────────────────────────────────────────────────────────────
-    DbSet<SystemLog>                 SystemLogs              { get; }
-
-    // ── Persistence ───────────────────────────────────────────────────────────
+    // ── Persistence ────────────────────────────────────────────────────────
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

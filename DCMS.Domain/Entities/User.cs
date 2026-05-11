@@ -15,8 +15,13 @@ public abstract class User : BaseEntity
     public bool IsFirstLogin { get; set; } = true;
     public bool IsActive { get; set; } = true;
 
+    // JWT refresh token
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiresAt { get; set; }
+
+    // Password reset flow — stores a hashed token sent to the user's email
+    public string? PasswordResetTokenHash { get; set; }
+    public DateTime? PasswordResetTokenExpiresAt { get; set; }
 
     // Navigation Properties
     public virtual ICollection<Notification> Notifications { get; set; }
@@ -25,7 +30,7 @@ public abstract class User : BaseEntity
     protected User()
     {
         Notifications = new HashSet<Notification>();
-        SystemLogs = new HashSet<SystemLog>();
+        SystemLogs    = new HashSet<SystemLog>();
     }
 }
 
@@ -41,7 +46,7 @@ public class Patient : User
     public Patient()
     {
         Appointments = new HashSet<Appointment>();
-        Reports = new HashSet<Report>();
+        Reports      = new HashSet<Report>();
     }
 }
 
@@ -60,56 +65,55 @@ public class Doctor : User
 
     public Doctor()
     {
-        Appointments = new HashSet<Appointment>();
-        Schedules = new HashSet<Schedule>();
-        Reports = new HashSet<Report>();
+        Appointments          = new HashSet<Appointment>();
+        Schedules             = new HashSet<Schedule>();
+        Reports               = new HashSet<Report>();
         ScheduleChangeRequests = new HashSet<ScheduleChangeRequest>();
     }
 }
 
 public class Owner : Doctor
 {
-    public virtual ICollection<ScheduleChangeRequest> ApprovedScheduleChanges { get; set; }
-    public virtual ICollection<ServiceModificationRequest> ApprovedServiceRequests { get; set; }
-    public virtual ICollection<FAQModificationRequest> ApprovedFAQRequests { get; set; }
-    public virtual ICollection<OfferDiscountModificationRequest> ApprovedOfferRequests { get; set; }
-    public virtual ICollection<BranchModificationRequest> ApprovedBranchRequests { get; set; }
+    public virtual ICollection<ScheduleChangeRequest>           ApprovedScheduleChanges  { get; set; }
+    public virtual ICollection<ServiceModificationRequest>      ApprovedServiceRequests  { get; set; }
+    public virtual ICollection<FAQModificationRequest>          ApprovedFAQRequests      { get; set; }
+    public virtual ICollection<OfferDiscountModificationRequest> ApprovedOfferRequests   { get; set; }
+    public virtual ICollection<BranchModificationRequest>       ApprovedBranchRequests   { get; set; }
 
     public Owner()
     {
         ApprovedScheduleChanges = new HashSet<ScheduleChangeRequest>();
         ApprovedServiceRequests = new HashSet<ServiceModificationRequest>();
-        ApprovedFAQRequests = new HashSet<FAQModificationRequest>();
-        ApprovedOfferRequests = new HashSet<OfferDiscountModificationRequest>();
-        ApprovedBranchRequests = new HashSet<BranchModificationRequest>();
+        ApprovedFAQRequests     = new HashSet<FAQModificationRequest>();
+        ApprovedOfferRequests   = new HashSet<OfferDiscountModificationRequest>();
+        ApprovedBranchRequests  = new HashSet<BranchModificationRequest>();
     }
 }
 
 public class Admin : User
 {
-    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequests { get; set; }
-    public virtual ICollection<ServiceModificationRequest> ServiceModificationRequests { get; set; }
-    public virtual ICollection<FAQModificationRequest> FAQModificationRequests { get; set; }
+    public virtual ICollection<ScheduleChangeRequest>            ScheduleChangeRequests           { get; set; }
+    public virtual ICollection<ServiceModificationRequest>       ServiceModificationRequests      { get; set; }
+    public virtual ICollection<FAQModificationRequest>           FAQModificationRequests          { get; set; }
     public virtual ICollection<OfferDiscountModificationRequest> OfferDiscountModificationRequests { get; set; }
-    public virtual ICollection<BranchModificationRequest> BranchModificationRequests { get; set; }
+    public virtual ICollection<BranchModificationRequest>        BranchModificationRequests       { get; set; }
 
     public Admin()
     {
-        ScheduleChangeRequests = new HashSet<ScheduleChangeRequest>();
-        ServiceModificationRequests = new HashSet<ServiceModificationRequest>();
-        FAQModificationRequests = new HashSet<FAQModificationRequest>();
+        ScheduleChangeRequests            = new HashSet<ScheduleChangeRequest>();
+        ServiceModificationRequests       = new HashSet<ServiceModificationRequest>();
+        FAQModificationRequests           = new HashSet<FAQModificationRequest>();
         OfferDiscountModificationRequests = new HashSet<OfferDiscountModificationRequest>();
-        BranchModificationRequests = new HashSet<BranchModificationRequest>();
+        BranchModificationRequests        = new HashSet<BranchModificationRequest>();
     }
 }
 
 public class Guest : User
 {
     public string SessionId { get; set; } = string.Empty;
-    public virtual ICollection<ContactMessage> ContactMessages { get; set; }
 
     public Guest()
     {
-        ContactMessages = new HashSet<ContactMessage>();
+        // Guest inherits base collections from User
     }
 }

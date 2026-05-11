@@ -5,12 +5,19 @@ namespace DCMS.Application.Interfaces;
 
 public interface IAppointmentService
 {
-    Task<AppointmentResponseDto> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<AppointmentResponseDto>              GetByIdAsync(int id, CancellationToken ct = default);
     Task<PagedResultDto<AppointmentSummaryDto>> GetAllAsync(int page, int pageSize, CancellationToken ct = default);
     Task<PagedResultDto<AppointmentSummaryDto>> GetByPatientAsync(int patientId, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResultDto<AppointmentSummaryDto>> GetByDoctorAsync(int doctorId, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResultDto<AppointmentSummaryDto>> GetUrgentAsync(int page, int pageSize, CancellationToken ct = default);
     Task<PagedResultDto<AppointmentSummaryDto>> GetUrgentByDateRangeAsync(DateOnly from, DateOnly to, int page, int pageSize, CancellationToken ct = default);
+
+    /// <summary>Upcoming (Pending/Confirmed) appointments for a patient, date ≥ today.</summary>
+    Task<PagedResultDto<AppointmentSummaryDto>> GetUpcomingByPatientAsync(int patientId, int page, int pageSize, CancellationToken ct = default);
+
+    /// <summary>Past (Completed/Cancelled/Rejected) appointments for a patient — visit history.</summary>
+    Task<PagedResultDto<AppointmentSummaryDto>> GetHistoryByPatientAsync(int patientId, int page, int pageSize, CancellationToken ct = default);
+
     Task<AppointmentResponseDto> BookAsync(AppointmentRequestDto dto, CancellationToken ct = default);
     Task<AppointmentResponseDto> RescheduleAsync(int id, int requestingUserId, RescheduleAppointmentRequestDto dto, CancellationToken ct = default);
     Task<AppointmentResponseDto> ConfirmAsync(int id, ConfirmAppointmentRequestDto dto, CancellationToken ct = default);

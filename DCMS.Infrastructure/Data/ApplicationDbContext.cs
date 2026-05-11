@@ -48,6 +48,7 @@ public class ApplicationDbContext : DbContext, IAppDbContext
     public DbSet<SystemLog>                         SystemLogs                          => Set<SystemLog>();
     public DbSet<DentalChart>                       DentalCharts                        => Set<DentalChart>();
     public DbSet<ToothRecord>                       ToothRecords                        => Set<ToothRecord>();
+    public DbSet<Revenue>                           Revenues                            => Set<Revenue>();
 
     // ── FIX-1: Timestamp management ───────────────────────────────────────
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -99,6 +100,7 @@ public class ApplicationDbContext : DbContext, IAppDbContext
         ConfigureDentalChart(modelBuilder);
         ConfigureContactMessage(modelBuilder);
         ConfigureServiceFaqBranch(modelBuilder);
+        ConfigureRevenue(modelBuilder);
     }
 
     // ── USER HIERARCHY (TPH) ──────────────────────────────────────────────
@@ -526,6 +528,26 @@ public class ApplicationDbContext : DbContext, IAppDbContext
             e.Property(b => b.Name).IsRequired().HasMaxLength(200);
             e.Property(b => b.Phone).HasMaxLength(20);
             e.Property(b => b.WorkingHours).HasMaxLength(500);
+        });
+    }
+
+    // ── REVENUE ───────────────────────────────────────────────────────────
+    private static void ConfigureRevenue(ModelBuilder mb)
+    {
+        mb.Entity<Revenue>(e =>
+        {
+            e.HasKey(r => r.Id);
+            e.Property(r => r.Amount).HasColumnType("decimal(18,2)");
+            e.Property(r => r.Date).IsRequired();
+
+            e.HasOne(r => r.Appointment).WithMany()
+             .HasForeignKey(r => r.AppointmentId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.Branch).WithMany()
+             .HasForeignKey(r => r.BranchId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.Service).WithMany()
+             .HasForeignKey(r => r.ServiceId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.Patient).WithMany()
+             .HasForeignKey(r => r.PatientId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

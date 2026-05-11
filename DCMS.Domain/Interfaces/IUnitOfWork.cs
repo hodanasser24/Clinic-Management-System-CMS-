@@ -33,6 +33,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<FAQ>                         FAQs                            { get; }
     IGenericRepository<OfferDiscount>               OfferDiscounts                  { get; }
     IGenericRepository<ContactMessage>              ContactMessages                 { get; }
+    IGenericRepository<Revenue>                     Revenues                        { get; }
 
     // ── Clinical module ────────────────────────────────────────────────────
     IGenericRepository<Prescription>                Prescriptions                   { get; }

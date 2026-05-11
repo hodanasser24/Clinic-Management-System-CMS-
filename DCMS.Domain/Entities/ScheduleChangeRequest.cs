@@ -4,63 +4,51 @@ using DCMS.Domain.Enums;
 namespace DCMS.Domain.Entities;
 
 /// <summary>
-/// Represents a Doctor-initiated request to change their own schedule.
-/// Requires dual approval: both the requesting Doctor AND the Owner must approve (BR-6).
-/// Either party can unilaterally reject (BR-49).
-/// Auto-expires after 24 hours if still Pending (BR-7).
+/// Doctor-initiated / Admin-submitted request to change a Schedule.
+/// BR-6:  Both Doctor AND Owner must approve.
+/// BR-49: Either party can unilaterally reject.
+/// BR-7:  Auto-expires after 24 hours if still Pending.
 ///
-/// IMPROVE-3: The FK to the requesting Doctor is named RequestingDoctorId (not DoctorId)
-///            to disambiguate it from Schedule.DoctorId (the schedule-owning Doctor).
-///            This prevents developer errors when implementing the BR-6 approval chain.
+/// OldStartTime / OldEndTime added from Class Specification to preserve
+/// an audit trail of what was being changed from.
 /// </summary>
 public class ScheduleChangeRequest : BaseEntity
 {
-    public int ScheduleId { get; set; }
-
-    /// <summary>
-    /// The Admin who submitted this change request on behalf of (or alongside) the Doctor.
-    /// </summary>
-    public int AdminId { get; set; }
-
-    /// <summary>
-    /// IMPROVE-3: The Doctor who initiated this schedule change request.
-    /// Note: the schedule-owning Doctor is reachable via Schedule.DoctorId.
-    /// </summary>
+    public int ScheduleId        { get; set; }
+    public int AdminId           { get; set; }
     public int RequestingDoctorId { get; set; }
-
-    public int OwnerId { get; set; }
+    public int OwnerId           { get; set; }
 
     public RequestStatus Status { get; set; } = RequestStatus.Pending;
 
-    // ── Proposed changes (nullable = keep existing value) ──────────────────
-    public DayOfWeek? ProposedDayOfWeek { get; set; }
-    public TimeOnly? ProposedStartTime { get; set; }
-    public TimeOnly? ProposedEndTime { get; set; }
-    public int? ProposedSessionDurationMinutes { get; set; }
-    public int? ProposedBreakDurationMinutes { get; set; }
+    // ── Audit trail: what the schedule looked like before ─────────────────
+    public DayOfWeek? OldDayOfWeek            { get; set; }
+    public TimeOnly?  OldStartTime            { get; set; }  // Class Spec
+    public TimeOnly?  OldEndTime              { get; set; }  // Class Spec
+    public int?       OldSessionDurationMinutes { get; set; }
 
-    // ── Dual approval fields (BR-6) ────────────────────────────────────────
-    /// <summary>Set to true when the requesting Doctor confirms the change.</summary>
-    public bool DoctorApproved { get; set; } = false;
+    // ── Proposed new values ────────────────────────────────────────────────
+    public DayOfWeek? ProposedDayOfWeek            { get; set; }
+    public TimeOnly?  ProposedStartTime            { get; set; }
+    public TimeOnly?  ProposedEndTime              { get; set; }
+    public int?       ProposedSessionDurationMinutes { get; set; }
+    public int?       ProposedBreakDurationMinutes  { get; set; }
 
-    /// <summary>Set to true when the Owner approves the change.</summary>
-    public bool OwnerApproved { get; set; } = false;
-
+    // ── Dual approval (BR-6) ───────────────────────────────────────────────
+    public bool      DoctorApproved   { get; set; } = false;
+    public bool      OwnerApproved    { get; set; } = false;
     public DateTime? DoctorApprovedAt { get; set; }
-    public DateTime? OwnerApprovedAt { get; set; }
+    public DateTime? OwnerApprovedAt  { get; set; }
 
-    public string? Reason { get; set; }
+    public string? Reason          { get; set; }
     public string? RejectionReason { get; set; }
 
-    // BR-7: Auto-expire after 24h
+    // BR-7: auto-expire timestamp
     public DateTime ExpiresAt { get; set; }
 
-    // ── Navigation properties ──────────────────────────────────────────────
-    public Schedule Schedule { get; set; } = null!;
-    public Admin Admin { get; set; } = null!;
-
-    /// <summary>IMPROVE-3: Navigation renamed to match RequestingDoctorId.</summary>
-    public Doctor RequestingDoctor { get; set; } = null!;
-
-    public Owner Owner { get; set; } = null!;
+    // ── Navigation ─────────────────────────────────────────────────────────
+    public Schedule   Schedule         { get; set; } = null!;
+    public Admin      Admin            { get; set; } = null!;
+    public Doctor     RequestingDoctor { get; set; } = null!;
+    public Owner      Owner            { get; set; } = null!;
 }

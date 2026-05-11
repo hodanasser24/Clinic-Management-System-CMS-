@@ -50,6 +50,7 @@ public sealed class UnitOfWork : IUnitOfWork
     private IGenericRepository<BranchModificationRequest>?      _branchModRequests;
     private IGenericRepository<Notification>?                   _notifications;
     private IGenericRepository<SystemLog>?                      _systemLogs;
+    private IGenericRepository<Revenue>?                        _revenues;
 
     public UnitOfWork(
         ApplicationDbContext context,
@@ -99,6 +100,7 @@ public sealed class UnitOfWork : IUnitOfWork
 
     public IGenericRepository<Notification> Notifications => _notifications ??= new GenericRepository<Notification>(_context);
     public IGenericRepository<SystemLog>    SystemLogs    => _systemLogs    ??= new GenericRepository<SystemLog>(_context);
+    public IGenericRepository<Revenue>      Revenues      => _revenues      ??= new GenericRepository<Revenue>(_context);
 
     // ── Persistence ────────────────────────────────────────────────────────
     public Task<int> SaveChangesAsync(CancellationToken ct = default)

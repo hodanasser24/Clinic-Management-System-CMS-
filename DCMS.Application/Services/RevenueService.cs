@@ -1,7 +1,7 @@
 using DCMS.Application.DTOs.Revenue;
 using DCMS.Application.Interfaces;
-using DCMS.Domain.Enums;
 using DCMS.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace DCMS.Application.Services;
 
@@ -17,36 +17,36 @@ public class RevenueService : IRevenueService
         var weekStart = today.AddDays(-(int)today.DayOfWeek);
         var monthStart = new DateOnly(today.Year, today.Month, 1);
 
-        // Only completed appointments generate revenue
-        var all = await _uow.Appointments.GetAllAsync(ct);
-        var completed = all
-            .Where(a => a.Status == AppointmentStatus.Completed && a.Service != null)
-            .ToList();
+        // Query directly from Revenues table for accuracy and performance
+        var allRevenues = await _uow.Revenues.FindAsync(r => true, ct);
+        var list = allRevenues.ToList();
 
-        var totalRevenue = completed.Sum(a => a.Service!.Price);
-        var todayRevenue = completed.Where(a => a.Date == today).Sum(a => a.Service!.Price);
-        var weekRevenue = completed.Where(a => a.Date >= weekStart).Sum(a => a.Service!.Price);
-        var monthRevenue = completed.Where(a => a.Date >= monthStart).Sum(a => a.Service!.Price);
+        var totalRevenue = list.Sum(r => r.Amount);
+        var todayRevenue = list.Where(r => r.Date == today).Sum(r => r.Amount);
+        var weekRevenue = list.Where(r => r.Date >= weekStart).Sum(r => r.Amount);
+        var monthRevenue = list.Where(r => r.Date >= monthStart).Sum(r => r.Amount);
 
-        var byBranch = completed
-            .GroupBy(a => new { a.BranchId, BranchName = a.Branch?.Name ?? string.Empty })
+        // Branch Breakdown
+        var byBranch = list
+            .GroupBy(r => new { r.BranchId, BranchName = r.Branch?.Name ?? $"Branch #{r.BranchId}" })
             .Select(g => new RevenueBranchBreakdownDto
             {
                 BranchId = g.Key.BranchId,
                 BranchName = g.Key.BranchName,
-                Revenue = g.Sum(a => a.Service!.Price),
+                Revenue = g.Sum(r => r.Amount),
                 AppointmentCount = g.Count()
             })
             .OrderByDescending(x => x.Revenue)
             .ToList();
 
-        var byService = completed
-            .GroupBy(a => new { a.ServiceId, ServiceName = a.Service?.Name ?? string.Empty })
+        // Service Breakdown
+        var byService = list
+            .GroupBy(r => new { r.ServiceId, ServiceName = r.Service?.Name ?? $"Service #{r.ServiceId}" })
             .Select(g => new RevenueServiceBreakdownDto
             {
                 ServiceId = g.Key.ServiceId,
                 ServiceName = g.Key.ServiceName,
-                Revenue = g.Sum(a => a.Service!.Price),
+                Revenue = g.Sum(r => r.Amount),
                 AppointmentCount = g.Count()
             })
             .OrderByDescending(x => x.Revenue)
@@ -58,7 +58,7 @@ public class RevenueService : IRevenueService
             TodayRevenue = todayRevenue,
             WeekRevenue = weekRevenue,
             MonthRevenue = monthRevenue,
-            CompletedAppointmentsTotal = completed.Count,
+            CompletedAppointmentsTotal = list.Count,
             ByBranch = byBranch,
             ByService = byService
         };
@@ -66,21 +66,17 @@ public class RevenueService : IRevenueService
 
     public async Task<RevenuePeriodDto> GetByPeriodAsync(DateOnly from, DateOnly to, CancellationToken ct = default)
     {
-        var all = await _uow.Appointments.GetAllAsync(ct);
-        var completed = all
-            .Where(a => a.Status == AppointmentStatus.Completed
-                        && a.Date >= from && a.Date <= to
-                        && a.Service != null)
-            .ToList();
+        var revenues = await _uow.Revenues.FindAsync(r => r.Date >= from && r.Date <= to, ct);
+        var list = revenues.ToList();
 
         var daily = new List<RevenueDailyDto>();
         for (var d = from; d <= to; d = d.AddDays(1))
         {
-            var dayItems = completed.Where(a => a.Date == d).ToList();
+            var dayItems = list.Where(r => r.Date == d).ToList();
             daily.Add(new RevenueDailyDto
             {
                 Date = d,
-                Revenue = dayItems.Sum(a => a.Service!.Price),
+                Revenue = dayItems.Sum(r => r.Amount),
                 AppointmentCount = dayItems.Count
             });
         }
@@ -89,8 +85,8 @@ public class RevenueService : IRevenueService
         {
             From = from,
             To = to,
-            TotalRevenue = completed.Sum(a => a.Service!.Price),
-            CompletedAppointments = completed.Count,
+            TotalRevenue = list.Sum(r => r.Amount),
+            CompletedAppointments = list.Count,
             DailyBreakdown = daily
         };
     }

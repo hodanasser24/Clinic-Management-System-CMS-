@@ -10,410 +10,466 @@ namespace DCMS.Application.Services;
 
 public class ModificationRequestService : IModificationRequestService
 {
-    private readonly IUnitOfWork _uow;
+    private readonly IUnitOfWork          _uow;
     private readonly INotificationService _notificationService;
 
-    public ModificationRequestService(IUnitOfWork uow, INotificationService notificationService)
+    public ModificationRequestService(
+        IUnitOfWork uow, INotificationService notificationService)
     {
-        _uow = uow;
+        _uow                 = uow;
         _notificationService = notificationService;
     }
 
-    // ─── Service Modification ────────────────────────────────
+    // ── SERVICE MODIFICATION ──────────────────────────────────────────────────
 
-    public async Task<ServiceModificationRequestResponseDto> CreateServiceRequestAsync(CreateServiceModificationRequestDto dto, CancellationToken ct = default)
+    public async Task<ServiceModificationRequestResponseDto> CreateServiceRequestAsync(
+        CreateServiceModificationRequestDto dto, CancellationToken ct = default)
     {
-        // BR-10: Admin submits the request
-        var admin = await _uow.Admins.GetByIdAsync(dto.AdminId, ct);
-        if (admin == null) throw new NotFoundException("Admin not found.");
+        if (await _uow.Admins.GetByIdAsync(dto.AdminId, ct) == null)
+            throw new NotFoundException("Admin not found.");
 
         var request = new ServiceModificationRequest
         {
-            AdminId = dto.AdminId,
-            OwnerId = dto.OwnerId,
-            ServiceId = dto.ServiceId,
-            RequestType = dto.RequestType,
-            Status = RequestStatus.Pending,
-            ProposedName = dto.ProposedName,
-            ProposedPrice = dto.ProposedPrice,
-            ProposedDescription = dto.ProposedDescription
+            AdminId              = dto.AdminId,
+            OwnerId              = dto.OwnerId,
+            ServiceId            = dto.ServiceId,
+            RequestType          = dto.RequestType,
+            Status               = RequestStatus.Pending,
+            ProposedName         = dto.ProposedName,
+            ProposedPrice        = dto.ProposedPrice,
+            ProposedDescription  = dto.ProposedDescription,
+            ProposedEstimatedDurationMinutes = dto.ProposedEstimatedDurationMinutes,
+            Reason               = null
         };
 
         await _uow.ServiceModificationRequests.AddAsync(request, ct);
         await _uow.SaveChangesAsync(ct);
 
         await _notificationService.SendAsync(
-            dto.OwnerId, NotificationType.ServiceModificationRequestSubmitted, NotificationPriority.Normal,
-            "Service Modification Request", "A new service modification request awaits your review.",
+            dto.OwnerId, NotificationType.ServiceModificationRequestSubmitted,
+            NotificationPriority.Normal,
+            "Service Modification Request",
+            "A new service modification request awaits your review.",
             request.Id, "ServiceModificationRequest", ct);
 
-        return await MapServiceRequestResponseAsync(request, ct);
+        return await MapServiceResponseAsync(request, ct);
     }
 
-    public async Task<ServiceModificationRequestResponseDto> ApproveRejectServiceRequestAsync(int requestId, ApproveRejectModificationRequestDto dto, int ownerId, CancellationToken ct = default)
+    public async Task<ServiceModificationRequestResponseDto> ApproveRejectServiceRequestAsync(
+        int requestId, ApproveRejectModificationRequestDto dto, int ownerId,
+        CancellationToken ct = default)
     {
-        var request = await _uow.ServiceModificationRequests.GetByIdAsync(requestId, ct);
-        if (request == null) throw new NotFoundException($"Service modification request {requestId} not found.");
+        var request = await _uow.ServiceModificationRequests.GetByIdAsync(requestId, ct)
+            ?? throw new NotFoundException($"Service modification request {requestId} not found.");
 
-        if (request.OwnerId != ownerId) throw new ForbiddenException("Only the designated Owner can approve/reject this request.");
-        if (request.Status != RequestStatus.Pending) throw new BusinessRuleException("Request is no longer pending.");
+        if (request.OwnerId != ownerId)
+            throw new ForbiddenException("Only the designated Owner can decide on this request.");
+        if (request.Status != RequestStatus.Pending)
+            throw new BusinessRuleException("Request is no longer pending.");
 
-        if (dto.Approve)
+        // Wrap in transaction: status change + entity mutation must be atomic
+        await _uow.BeginTransactionAsync(ct);
+        try
         {
-            request.Status = RequestStatus.Approved;
-            await ApplyServiceModificationAsync(request, ct);
+            if (dto.Approve)
+            {
+                request.Status      = RequestStatus.Approved;
+                request.ApprovalDate = DateTime.UtcNow;
+                await ApplyServiceChangeAsync(request, ct);
+            }
+            else
+            {
+                request.Status          = RequestStatus.Rejected;
+                request.RejectionReason = dto.RejectionReason;
+            }
+
+            await _uow.CommitTransactionAsync(ct);
         }
-        else
+        catch
         {
-            request.Status = RequestStatus.Rejected;
+            await _uow.RollbackTransactionAsync(ct);
+            throw;
         }
 
-        await _uow.SaveChangesAsync(ct);
+        var notifType = dto.Approve
+            ? NotificationType.ServiceModificationRequestApproved
+            : NotificationType.ServiceModificationRequestRejected;
 
         await _notificationService.SendAsync(
-            request.AdminId,
-            dto.Approve ? NotificationType.ServiceModificationRequestApproved : NotificationType.ServiceModificationRequestRejected,
-            NotificationPriority.Normal,
+            request.AdminId, notifType, NotificationPriority.Normal,
             dto.Approve ? "Request Approved" : "Request Rejected",
-            dto.Approve ? "Your service modification request was approved." : "Your service modification request was rejected.",
+            dto.Approve
+                ? "Your service modification request was approved."
+                : $"Your service modification request was rejected. {dto.RejectionReason}",
             request.Id, "ServiceModificationRequest", ct);
 
-        return await MapServiceRequestResponseAsync(request, ct);
+        return await MapServiceResponseAsync(request, ct);
     }
 
-    public async Task<PagedResultDto<ServiceModificationRequestResponseDto>> GetServiceRequestsAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResultDto<ServiceModificationRequestResponseDto>> GetServiceRequestsAsync(
+        int page, int pageSize, CancellationToken ct = default)
     {
         var paged = await _uow.ServiceModificationRequests.GetPagedAsync(page, pageSize, ct: ct);
         var items = new List<ServiceModificationRequestResponseDto>();
-        foreach (var r in paged.Items)
-            items.Add(await MapServiceRequestResponseAsync(r, ct));
-
+        foreach (var r in paged.Items) items.Add(await MapServiceResponseAsync(r, ct));
         return new PagedResultDto<ServiceModificationRequestResponseDto>
         {
-            Items = items,
-            TotalCount = paged.TotalCount,
-            Page = paged.Page,
-            PageSize = paged.PageSize
+            Items = items, TotalCount = paged.TotalCount, Page = paged.Page, PageSize = paged.PageSize
         };
     }
 
-    private async Task ApplyServiceModificationAsync(ServiceModificationRequest request, CancellationToken ct)
+    private async Task ApplyServiceChangeAsync(ServiceModificationRequest r, CancellationToken ct)
     {
-        if (request.RequestType == RequestType.Add)
+        if (r.RequestType == RequestType.Add)
         {
-            var service = new Service
+            await _uow.Services.AddAsync(new Service
             {
-                Name = request.ProposedName!,
-                Description = request.ProposedDescription,
-                Price = request.ProposedPrice ?? 0,
-                IsActive = true
-            };
-            await _uow.Services.AddAsync(service, ct);
+                Name        = r.ProposedName!,
+                Description = r.ProposedDescription,
+                Price       = r.ProposedPrice ?? 0,
+                EstimatedDurationMinutes = r.ProposedEstimatedDurationMinutes ?? 30,
+                IsActive    = true
+            }, ct);
         }
-        else if (request.RequestType == RequestType.Update && request.ServiceId.HasValue)
+        else if (r.RequestType == RequestType.Update && r.ServiceId.HasValue)
         {
-            var service = await _uow.Services.GetByIdAsync(request.ServiceId.Value, ct);
-            if (service != null)
-            {
-                if (request.ProposedName != null) service.Name = request.ProposedName;
-                if (request.ProposedPrice.HasValue) service.Price = request.ProposedPrice.Value;
-                if (request.ProposedDescription != null) service.Description = request.ProposedDescription;
-            }
+            var svc = await _uow.Services.GetByIdAsync(r.ServiceId.Value, ct);
+            if (svc == null) return;
+            if (r.ProposedName != null)        svc.Name        = r.ProposedName;
+            if (r.ProposedPrice.HasValue)      svc.Price       = r.ProposedPrice.Value;
+            if (r.ProposedDescription != null) svc.Description = r.ProposedDescription;
+            if (r.ProposedEstimatedDurationMinutes.HasValue)
+                svc.EstimatedDurationMinutes = r.ProposedEstimatedDurationMinutes.Value;
         }
-        else if (request.RequestType == RequestType.Delete && request.ServiceId.HasValue)
+        else if (r.RequestType == RequestType.Delete && r.ServiceId.HasValue)
         {
-            var service = await _uow.Services.GetByIdAsync(request.ServiceId.Value, ct);
-            if (service != null) service.IsActive = false;
+            var svc = await _uow.Services.GetByIdAsync(r.ServiceId.Value, ct);
+            if (svc != null) svc.IsActive = false;
         }
     }
 
-    private async Task<ServiceModificationRequestResponseDto> MapServiceRequestResponseAsync(ServiceModificationRequest r, CancellationToken ct)
+    private async Task<ServiceModificationRequestResponseDto> MapServiceResponseAsync(
+        ServiceModificationRequest r, CancellationToken ct)
     {
         var admin = await _uow.Admins.GetByIdAsync(r.AdminId, ct);
         var owner = await _uow.Doctors.GetByIdAsync(r.OwnerId, ct);
         return new ServiceModificationRequestResponseDto
         {
-            Id = r.Id,
-            AdminId = r.AdminId,
-            AdminName = admin?.FullName ?? string.Empty,
-            OwnerId = r.OwnerId,
-            OwnerName = owner?.FullName ?? string.Empty,
-            ServiceId = r.ServiceId,
-            RequestType = r.RequestType,
-            Status = r.Status,
-            ProposedName = r.ProposedName,
-            ProposedPrice = r.ProposedPrice,
-            ProposedDescription = r.ProposedDescription,
-            CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
+            Id                              = r.Id,
+            AdminId                         = r.AdminId,
+            AdminName                       = admin?.FullName ?? string.Empty,
+            OwnerId                         = r.OwnerId,
+            OwnerName                       = owner?.FullName ?? string.Empty,
+            ServiceId                       = r.ServiceId,
+            RequestType                     = r.RequestType,
+            Status                          = r.Status,
+            ProposedName                    = r.ProposedName,
+            ProposedPrice                   = r.ProposedPrice,
+            ProposedDescription             = r.ProposedDescription,
+            ProposedEstimatedDurationMinutes = r.ProposedEstimatedDurationMinutes,
+            ApprovalDate                    = r.ApprovalDate,
+            CreatedAt                       = r.CreatedAt,
+            UpdatedAt                       = r.UpdatedAt
         };
     }
 
-    // ─── FAQ Modification ────────────────────────────────────
+    // ── FAQ MODIFICATION ──────────────────────────────────────────────────────
 
-    public async Task<FAQModificationRequestResponseDto> CreateFAQRequestAsync(CreateFAQModificationRequestDto dto, CancellationToken ct = default)
+    public async Task<FAQModificationRequestResponseDto> CreateFAQRequestAsync(
+        CreateFAQModificationRequestDto dto, CancellationToken ct = default)
     {
-        var admin = await _uow.Admins.GetByIdAsync(dto.AdminId, ct);
-        if (admin == null) throw new NotFoundException("Admin not found.");
+        if (await _uow.Admins.GetByIdAsync(dto.AdminId, ct) == null)
+            throw new NotFoundException("Admin not found.");
 
         var request = new FAQModificationRequest
         {
-            AdminId = dto.AdminId,
-            OwnerId = dto.OwnerId,
-            FAQId = dto.FAQId,
-            RequestType = dto.RequestType,
-            Status = RequestStatus.Pending,
+            AdminId          = dto.AdminId,
+            OwnerId          = dto.OwnerId,
+            FAQId            = dto.FAQId,
+            RequestType      = dto.RequestType,
+            Status           = RequestStatus.Pending,
             ProposedQuestion = dto.ProposedQuestion,
-            ProposedAnswer = dto.ProposedAnswer
+            ProposedAnswer   = dto.ProposedAnswer
         };
 
         await _uow.FAQModificationRequests.AddAsync(request, ct);
         await _uow.SaveChangesAsync(ct);
 
         await _notificationService.SendAsync(
-            dto.OwnerId, NotificationType.FAQModificationRequestSubmitted, NotificationPriority.Normal,
-            "FAQ Modification Request", "A new FAQ modification request awaits your review.",
+            dto.OwnerId, NotificationType.FAQModificationRequestSubmitted,
+            NotificationPriority.Normal, "FAQ Modification Request",
+            "A new FAQ modification request awaits your review.",
             request.Id, "FAQModificationRequest", ct);
 
-        return await MapFAQRequestResponseAsync(request, ct);
+        return await MapFAQResponseAsync(request, ct);
     }
 
-    public async Task<FAQModificationRequestResponseDto> ApproveRejectFAQRequestAsync(int requestId, ApproveRejectModificationRequestDto dto, int ownerId, CancellationToken ct = default)
+    public async Task<FAQModificationRequestResponseDto> ApproveRejectFAQRequestAsync(
+        int requestId, ApproveRejectModificationRequestDto dto, int ownerId,
+        CancellationToken ct = default)
     {
-        var request = await _uow.FAQModificationRequests.GetByIdAsync(requestId, ct);
-        if (request == null) throw new NotFoundException($"FAQ modification request {requestId} not found.");
+        var request = await _uow.FAQModificationRequests.GetByIdAsync(requestId, ct)
+            ?? throw new NotFoundException($"FAQ modification request {requestId} not found.");
 
-        if (request.OwnerId != ownerId) throw new ForbiddenException("Only the designated Owner can approve/reject this request.");
-        if (request.Status != RequestStatus.Pending) throw new BusinessRuleException("Request is no longer pending.");
+        if (request.OwnerId != ownerId)
+            throw new ForbiddenException("Only the designated Owner can decide on this request.");
+        if (request.Status != RequestStatus.Pending)
+            throw new BusinessRuleException("Request is no longer pending.");
 
-        if (dto.Approve)
+        await _uow.BeginTransactionAsync(ct);
+        try
         {
-            request.Status = RequestStatus.Approved;
-            await ApplyFAQModificationAsync(request, ct);
+            if (dto.Approve)
+            {
+                request.Status = RequestStatus.Approved;
+                await ApplyFAQChangeAsync(request, ct);
+            }
+            else
+            {
+                request.Status          = RequestStatus.Rejected;
+                request.RejectionReason = dto.RejectionReason;
+            }
+            await _uow.CommitTransactionAsync(ct);
         }
-        else
+        catch
         {
-            request.Status = RequestStatus.Rejected;
+            await _uow.RollbackTransactionAsync(ct);
+            throw;
         }
 
-        await _uow.SaveChangesAsync(ct);
-        return await MapFAQRequestResponseAsync(request, ct);
+        return await MapFAQResponseAsync(request, ct);
     }
 
-    public async Task<PagedResultDto<FAQModificationRequestResponseDto>> GetFAQRequestsAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResultDto<FAQModificationRequestResponseDto>> GetFAQRequestsAsync(
+        int page, int pageSize, CancellationToken ct = default)
     {
         var paged = await _uow.FAQModificationRequests.GetPagedAsync(page, pageSize, ct: ct);
         var items = new List<FAQModificationRequestResponseDto>();
-        foreach (var r in paged.Items)
-            items.Add(await MapFAQRequestResponseAsync(r, ct));
-
+        foreach (var r in paged.Items) items.Add(await MapFAQResponseAsync(r, ct));
         return new PagedResultDto<FAQModificationRequestResponseDto>
         {
-            Items = items,
-            TotalCount = paged.TotalCount,
-            Page = paged.Page,
-            PageSize = paged.PageSize
+            Items = items, TotalCount = paged.TotalCount, Page = paged.Page, PageSize = paged.PageSize
         };
     }
 
-    private async Task ApplyFAQModificationAsync(FAQModificationRequest request, CancellationToken ct)
+    private async Task ApplyFAQChangeAsync(FAQModificationRequest r, CancellationToken ct)
     {
-        if (request.RequestType == RequestType.Add)
+        if (r.RequestType == RequestType.Add)
         {
-            var faq = new FAQ
+            await _uow.FAQs.AddAsync(new FAQ
             {
-                Question = request.ProposedQuestion!,
-                Answer = request.ProposedAnswer!,
-                IsActive = true,
+                Question     = r.ProposedQuestion!,
+                Answer       = r.ProposedAnswer!,
+                IsActive     = true,
                 DisplayOrder = 0
-            };
-            await _uow.FAQs.AddAsync(faq, ct);
+            }, ct);
         }
-        else if (request.RequestType == RequestType.Update && request.FAQId.HasValue)
+        else if (r.RequestType == RequestType.Update && r.FAQId.HasValue)
         {
-            var faq = await _uow.FAQs.GetByIdAsync(request.FAQId.Value, ct);
-            if (faq != null)
-            {
-                if (request.ProposedQuestion != null) faq.Question = request.ProposedQuestion;
-                if (request.ProposedAnswer != null) faq.Answer = request.ProposedAnswer;
-            }
+            var faq = await _uow.FAQs.GetByIdAsync(r.FAQId.Value, ct);
+            if (faq == null) return;
+            if (r.ProposedQuestion != null) faq.Question = r.ProposedQuestion;
+            if (r.ProposedAnswer   != null) faq.Answer   = r.ProposedAnswer;
         }
-        else if (request.RequestType == RequestType.Delete && request.FAQId.HasValue)
+        else if (r.RequestType == RequestType.Delete && r.FAQId.HasValue)
         {
-            var faq = await _uow.FAQs.GetByIdAsync(request.FAQId.Value, ct);
+            var faq = await _uow.FAQs.GetByIdAsync(r.FAQId.Value, ct);
             if (faq != null) faq.IsActive = false;
         }
     }
 
-    private async Task<FAQModificationRequestResponseDto> MapFAQRequestResponseAsync(FAQModificationRequest r, CancellationToken ct)
+    private async Task<FAQModificationRequestResponseDto> MapFAQResponseAsync(
+        FAQModificationRequest r, CancellationToken ct)
     {
         var admin = await _uow.Admins.GetByIdAsync(r.AdminId, ct);
         var owner = await _uow.Doctors.GetByIdAsync(r.OwnerId, ct);
         return new FAQModificationRequestResponseDto
         {
-            Id = r.Id,
-            AdminId = r.AdminId,
-            AdminName = admin?.FullName ?? string.Empty,
-            OwnerId = r.OwnerId,
-            OwnerName = owner?.FullName ?? string.Empty,
-            FAQId = r.FAQId,
-            RequestType = r.RequestType,
-            Status = r.Status,
+            Id               = r.Id,
+            AdminId          = r.AdminId,
+            AdminName        = admin?.FullName ?? string.Empty,
+            OwnerId          = r.OwnerId,
+            OwnerName        = owner?.FullName ?? string.Empty,
+            FAQId            = r.FAQId,
+            RequestType      = r.RequestType,
+            Status           = r.Status,
             ProposedQuestion = r.ProposedQuestion,
-            ProposedAnswer = r.ProposedAnswer,
-            CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
+            ProposedAnswer   = r.ProposedAnswer,
+            CreatedAt        = r.CreatedAt,
+            UpdatedAt        = r.UpdatedAt
         };
     }
 
-    // ─── Offer Modification ───────────────────────────────────
+    // ── OFFER MODIFICATION ────────────────────────────────────────────────────
 
-    public async Task<OfferDiscountModificationRequestResponseDto> CreateOfferRequestAsync(CreateOfferDiscountModificationRequestDto dto, CancellationToken ct = default)
+    public async Task<OfferDiscountModificationRequestResponseDto> CreateOfferRequestAsync(
+        CreateOfferDiscountModificationRequestDto dto, CancellationToken ct = default)
     {
-        var admin = await _uow.Admins.GetByIdAsync(dto.AdminId, ct);
-        if (admin == null) throw new NotFoundException("Admin not found.");
+        if (await _uow.Admins.GetByIdAsync(dto.AdminId, ct) == null)
+            throw new NotFoundException("Admin not found.");
 
         var request = new OfferDiscountModificationRequest
         {
-            AdminId = dto.AdminId,
-            OwnerId = dto.OwnerId,
-            OfferId = dto.OfferId,
-            RequestType = dto.RequestType,
-            Status = RequestStatus.Pending,
-            ProposedTitle = dto.ProposedTitle,
+            AdminId                    = dto.AdminId,
+            OwnerId                    = dto.OwnerId,
+            OfferId                    = dto.OfferId,
+            RequestType                = dto.RequestType,
+            Status                     = RequestStatus.Pending,
+            ProposedTitle              = dto.ProposedTitle,
+            ProposedDescription        = dto.ProposedDescription,
             ProposedDiscountPercentage = dto.ProposedDiscountPercentage,
-            ProposedStartDate = dto.ProposedStartDate,
-            ProposedEndDate = dto.ProposedEndDate
+            ProposedStartDate          = dto.ProposedStartDate,
+            ProposedEndDate            = dto.ProposedEndDate,
+            ProposedBranchId           = dto.ProposedBranchId,
+            ProposedServiceId          = dto.ProposedServiceId
         };
 
         await _uow.OfferDiscountModificationRequests.AddAsync(request, ct);
         await _uow.SaveChangesAsync(ct);
 
         await _notificationService.SendAsync(
-            dto.OwnerId, NotificationType.OfferModificationRequestSubmitted, NotificationPriority.Normal,
-            "Offer Modification Request", "A new offer modification request awaits your review.",
+            dto.OwnerId, NotificationType.OfferModificationRequestSubmitted,
+            NotificationPriority.Normal, "Offer Modification Request",
+            "A new offer modification request awaits your review.",
             request.Id, "OfferDiscountModificationRequest", ct);
 
-        return MapOfferRequestResponse(request);
+        return MapOfferResponse(request);
     }
 
-    public async Task<OfferDiscountModificationRequestResponseDto> ApproveRejectOfferRequestAsync(int requestId, ApproveRejectModificationRequestDto dto, int ownerId, CancellationToken ct = default)
+    public async Task<OfferDiscountModificationRequestResponseDto> ApproveRejectOfferRequestAsync(
+        int requestId, ApproveRejectModificationRequestDto dto, int ownerId,
+        CancellationToken ct = default)
     {
-        var request = await _uow.OfferDiscountModificationRequests.GetByIdAsync(requestId, ct);
-        if (request == null) throw new NotFoundException($"Offer modification request {requestId} not found.");
+        var request = await _uow.OfferDiscountModificationRequests.GetByIdAsync(requestId, ct)
+            ?? throw new NotFoundException($"Offer modification request {requestId} not found.");
 
-        if (request.OwnerId != ownerId) throw new ForbiddenException("Only the designated Owner can approve/reject this request.");
-        if (request.Status != RequestStatus.Pending) throw new BusinessRuleException("Request is no longer pending.");
+        if (request.OwnerId != ownerId)
+            throw new ForbiddenException("Only the designated Owner can decide on this request.");
+        if (request.Status != RequestStatus.Pending)
+            throw new BusinessRuleException("Request is no longer pending.");
 
-        if (dto.Approve)
+        await _uow.BeginTransactionAsync(ct);
+        try
         {
-            request.Status = RequestStatus.Approved;
-            await ApplyOfferModificationAsync(request, ct);
+            if (dto.Approve)
+            {
+                request.Status = RequestStatus.Approved;
+                await ApplyOfferChangeAsync(request, ct);
+            }
+            else
+            {
+                request.Status          = RequestStatus.Rejected;
+                request.RejectionReason = dto.RejectionReason;
+            }
+            await _uow.CommitTransactionAsync(ct);
         }
-        else
+        catch
         {
-            request.Status = RequestStatus.Rejected;
+            await _uow.RollbackTransactionAsync(ct);
+            throw;
         }
 
-        await _uow.SaveChangesAsync(ct);
+        var notifType = dto.Approve
+            ? NotificationType.OfferModificationRequestApproved
+            : NotificationType.OfferModificationRequestRejected;
 
         await _notificationService.SendAsync(
-            request.AdminId,
-            dto.Approve ? NotificationType.OfferModificationRequestApproved : NotificationType.OfferModificationRequestRejected,
-            NotificationPriority.Normal,
+            request.AdminId, notifType, NotificationPriority.Normal,
             dto.Approve ? "Offer Request Approved" : "Offer Request Rejected",
-            dto.Approve ? "Your offer modification request was approved." : "Your offer modification request was rejected.",
+            dto.Approve
+                ? "Your offer modification request was approved."
+                : $"Your offer modification request was rejected. {dto.RejectionReason}",
             request.Id, "OfferDiscountModificationRequest", ct);
 
-        return MapOfferRequestResponse(request);
+        return MapOfferResponse(request);
     }
 
-    public async Task<PagedResultDto<OfferDiscountModificationRequestResponseDto>> GetOfferRequestsAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResultDto<OfferDiscountModificationRequestResponseDto>> GetOfferRequestsAsync(
+        int page, int pageSize, CancellationToken ct = default)
     {
         var paged = await _uow.OfferDiscountModificationRequests.GetPagedAsync(page, pageSize, ct: ct);
         return new PagedResultDto<OfferDiscountModificationRequestResponseDto>
         {
-            Items = paged.Items.Select(MapOfferRequestResponse).ToList(),
+            Items      = paged.Items.Select(MapOfferResponse).ToList(),
             TotalCount = paged.TotalCount,
-            Page = paged.Page,
-            PageSize = paged.PageSize
+            Page       = paged.Page,
+            PageSize   = paged.PageSize
         };
     }
 
-    private async Task ApplyOfferModificationAsync(OfferDiscountModificationRequest request, CancellationToken ct)
+    private async Task ApplyOfferChangeAsync(OfferDiscountModificationRequest r, CancellationToken ct)
     {
-        if (request.RequestType == RequestType.Add)
+        if (r.RequestType == RequestType.Add)
         {
-            // New offer created — Owner must activate explicitly (BR-58)
-            var offer = new OfferDiscount
+            // BR-58: new offer starts inactive — Owner must explicitly activate
+            await _uow.OfferDiscounts.AddAsync(new OfferDiscount
             {
-                Title = request.ProposedTitle ?? "New Offer",
-                Description = request.ProposedDescription,
-                DiscountPercentage = request.ProposedDiscountPercentage ?? 0,
-                StartDate = request.ProposedStartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
-                EndDate = request.ProposedEndDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
-                BranchId = request.ProposedBranchId ?? 0,
-                ServiceId = request.ProposedServiceId,
-                IsActive = false // BR-58: Owner activates explicitly
-            };
-            await _uow.OfferDiscounts.AddAsync(offer, ct);
+                Title              = r.ProposedTitle ?? "New Offer",
+                Description        = r.ProposedDescription,
+                DiscountPercentage = r.ProposedDiscountPercentage ?? 0,
+                StartDate          = r.ProposedStartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                EndDate            = r.ProposedEndDate   ?? DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+                BranchId           = r.ProposedBranchId  ?? 0,
+                ServiceId          = r.ProposedServiceId,
+                IsActive           = false
+            }, ct);
         }
-        else if (request.RequestType == RequestType.Update && request.OfferId.HasValue)
+        else if (r.RequestType == RequestType.Update && r.OfferId.HasValue)
         {
-            var offer = await _uow.OfferDiscounts.GetByIdAsync(request.OfferId.Value, ct);
-            if (offer != null)
-            {
-                if (request.ProposedTitle != null) offer.Title = request.ProposedTitle;
-                if (request.ProposedDescription != null) offer.Description = request.ProposedDescription;
-                if (request.ProposedDiscountPercentage.HasValue) offer.DiscountPercentage = request.ProposedDiscountPercentage.Value;
-                if (request.ProposedStartDate.HasValue) offer.StartDate = request.ProposedStartDate.Value;
-                if (request.ProposedEndDate.HasValue) offer.EndDate = request.ProposedEndDate.Value;
-                if (request.ProposedBranchId.HasValue) offer.BranchId = request.ProposedBranchId.Value;
-                if (request.ProposedServiceId.HasValue) offer.ServiceId = request.ProposedServiceId.Value;
-            }
+            var offer = await _uow.OfferDiscounts.GetByIdAsync(r.OfferId.Value, ct);
+            if (offer == null) return;
+            if (r.ProposedTitle              != null) offer.Title              = r.ProposedTitle;
+            if (r.ProposedDescription        != null) offer.Description        = r.ProposedDescription;
+            if (r.ProposedDiscountPercentage.HasValue) offer.DiscountPercentage = r.ProposedDiscountPercentage.Value;
+            if (r.ProposedStartDate.HasValue)          offer.StartDate          = r.ProposedStartDate.Value;
+            if (r.ProposedEndDate.HasValue)            offer.EndDate            = r.ProposedEndDate.Value;
+            if (r.ProposedBranchId.HasValue)           offer.BranchId           = r.ProposedBranchId.Value;
+            if (r.ProposedServiceId.HasValue)          offer.ServiceId          = r.ProposedServiceId.Value;
         }
-        else if (request.RequestType == RequestType.Delete && request.OfferId.HasValue)
+        else if (r.RequestType == RequestType.Delete && r.OfferId.HasValue)
         {
-            var offer = await _uow.OfferDiscounts.GetByIdAsync(request.OfferId.Value, ct);
+            var offer = await _uow.OfferDiscounts.GetByIdAsync(r.OfferId.Value, ct);
             if (offer != null) offer.IsActive = false;
         }
     }
 
-    private static OfferDiscountModificationRequestResponseDto MapOfferRequestResponse(OfferDiscountModificationRequest r) => new()
+    private static OfferDiscountModificationRequestResponseDto MapOfferResponse(
+        OfferDiscountModificationRequest r) => new()
     {
-        Id = r.Id,
-        AdminId = r.AdminId,
-        AdminName = r.Admin?.FullName ?? string.Empty,
-        OwnerId = r.OwnerId,
-        OwnerName = r.Owner?.FullName ?? string.Empty,
-        OfferId = r.OfferId,
-        RequestType = r.RequestType,
-        Status = r.Status,
-        ProposedTitle = r.ProposedTitle,
+        Id                         = r.Id,
+        AdminId                    = r.AdminId,
+        AdminName                  = r.Admin?.FullName  ?? string.Empty,
+        OwnerId                    = r.OwnerId,
+        OwnerName                  = r.Owner?.FullName  ?? string.Empty,
+        OfferId                    = r.OfferId,
+        RequestType                = r.RequestType,
+        Status                     = r.Status,
+        ProposedTitle              = r.ProposedTitle,
         ProposedDiscountPercentage = r.ProposedDiscountPercentage,
-        ProposedStartDate = r.ProposedStartDate,
-        ProposedEndDate = r.ProposedEndDate,
-        CreatedAt = r.CreatedAt,
-        UpdatedAt = r.UpdatedAt
+        ProposedStartDate          = r.ProposedStartDate,
+        ProposedEndDate            = r.ProposedEndDate,
+        CreatedAt                  = r.CreatedAt,
+        UpdatedAt                  = r.UpdatedAt
     };
 
-    // ─── Branch Modification ─────────────────────────────────
+    // ── BRANCH MODIFICATION ───────────────────────────────────────────────────
 
-    public async Task<BranchModificationRequestResponseDto> CreateBranchRequestAsync(CreateBranchModificationRequestDto dto, CancellationToken ct = default)
+    public async Task<BranchModificationRequestResponseDto> CreateBranchRequestAsync(
+        CreateBranchModificationRequestDto dto, CancellationToken ct = default)
     {
-        var admin = await _uow.Admins.GetByIdAsync(dto.AdminId, ct);
-        if (admin == null) throw new NotFoundException("Admin not found.");
+        if (await _uow.Admins.GetByIdAsync(dto.AdminId, ct) == null)
+            throw new NotFoundException("Admin not found.");
 
         var request = new BranchModificationRequest
         {
-            AdminId = dto.AdminId,
-            OwnerId = dto.OwnerId,
-            BranchId = dto.BranchId,
-            RequestType = dto.RequestType,
-            Status = RequestStatus.Pending,
-            ProposedName = dto.ProposedName,
-            ProposedLocation = dto.ProposedLocation,
-            ProposedPhone = dto.ProposedPhone,
+            AdminId              = dto.AdminId,
+            OwnerId              = dto.OwnerId,
+            BranchId             = dto.BranchId,
+            RequestType          = dto.RequestType,
+            Status               = RequestStatus.Pending,
+            ProposedName         = dto.ProposedName,
+            ProposedLocation     = dto.ProposedLocation,
+            ProposedPhone        = dto.ProposedPhone,
             ProposedWorkingHours = dto.ProposedWorkingHours
         };
 
@@ -421,103 +477,120 @@ public class ModificationRequestService : IModificationRequestService
         await _uow.SaveChangesAsync(ct);
 
         await _notificationService.SendAsync(
-            dto.OwnerId, NotificationType.BranchModificationRequestSubmitted, NotificationPriority.Normal,
-            "Branch Modification Request", "A new branch modification request awaits your review.",
+            dto.OwnerId, NotificationType.BranchModificationRequestSubmitted,
+            NotificationPriority.Normal, "Branch Modification Request",
+            "A new branch modification request awaits your review.",
             request.Id, "BranchModificationRequest", ct);
 
-        return MapBranchRequestResponse(request);
+        return MapBranchResponse(request);
     }
 
-    public async Task<BranchModificationRequestResponseDto> ApproveRejectBranchRequestAsync(int requestId, ApproveRejectModificationRequestDto dto, int ownerId, CancellationToken ct = default)
+    public async Task<BranchModificationRequestResponseDto> ApproveRejectBranchRequestAsync(
+        int requestId, ApproveRejectModificationRequestDto dto, int ownerId,
+        CancellationToken ct = default)
     {
-        var request = await _uow.BranchModificationRequests.GetByIdAsync(requestId, ct);
-        if (request == null) throw new NotFoundException($"Branch modification request {requestId} not found.");
+        var request = await _uow.BranchModificationRequests.GetByIdAsync(requestId, ct)
+            ?? throw new NotFoundException($"Branch modification request {requestId} not found.");
 
-        if (request.OwnerId != ownerId) throw new ForbiddenException("Only the designated Owner can approve/reject this request.");
-        if (request.Status != RequestStatus.Pending) throw new BusinessRuleException("Request is no longer pending.");
+        if (request.OwnerId != ownerId)
+            throw new ForbiddenException("Only the designated Owner can decide on this request.");
+        if (request.Status != RequestStatus.Pending)
+            throw new BusinessRuleException("Request is no longer pending.");
 
-        if (dto.Approve)
+        await _uow.BeginTransactionAsync(ct);
+        try
         {
-            request.Status = RequestStatus.Approved;
-            await ApplyBranchModificationAsync(request, ct);
+            if (dto.Approve)
+            {
+                request.Status = RequestStatus.Approved;
+                await ApplyBranchChangeAsync(request, ct);
+            }
+            else
+            {
+                request.Status          = RequestStatus.Rejected;
+                request.RejectionReason = dto.RejectionReason;
+            }
+            await _uow.CommitTransactionAsync(ct);
         }
-        else
+        catch
         {
-            request.Status = RequestStatus.Rejected;
+            await _uow.RollbackTransactionAsync(ct);
+            throw;
         }
 
-        await _uow.SaveChangesAsync(ct);
+        var notifType = dto.Approve
+            ? NotificationType.BranchModificationRequestApproved
+            : NotificationType.BranchModificationRequestRejected;
 
         await _notificationService.SendAsync(
-            request.AdminId,
-            dto.Approve ? NotificationType.BranchModificationRequestApproved : NotificationType.BranchModificationRequestRejected,
-            NotificationPriority.Normal,
+            request.AdminId, notifType, NotificationPriority.Normal,
             dto.Approve ? "Branch Request Approved" : "Branch Request Rejected",
-            dto.Approve ? "Your branch modification request was approved." : "Your branch modification request was rejected.",
+            dto.Approve
+                ? "Your branch modification request was approved."
+                : $"Your branch modification request was rejected. {dto.RejectionReason}",
             request.Id, "BranchModificationRequest", ct);
 
-        return MapBranchRequestResponse(request);
+        return MapBranchResponse(request);
     }
 
-    public async Task<PagedResultDto<BranchModificationRequestResponseDto>> GetBranchRequestsAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResultDto<BranchModificationRequestResponseDto>> GetBranchRequestsAsync(
+        int page, int pageSize, CancellationToken ct = default)
     {
         var paged = await _uow.BranchModificationRequests.GetPagedAsync(page, pageSize, ct: ct);
         return new PagedResultDto<BranchModificationRequestResponseDto>
         {
-            Items = paged.Items.Select(MapBranchRequestResponse).ToList(),
+            Items      = paged.Items.Select(MapBranchResponse).ToList(),
             TotalCount = paged.TotalCount,
-            Page = paged.Page,
-            PageSize = paged.PageSize
+            Page       = paged.Page,
+            PageSize   = paged.PageSize
         };
     }
 
-    private async Task ApplyBranchModificationAsync(BranchModificationRequest request, CancellationToken ct)
+    private async Task ApplyBranchChangeAsync(BranchModificationRequest r, CancellationToken ct)
     {
-        if (request.RequestType == RequestType.Add)
+        if (r.RequestType == RequestType.Add)
         {
-            var branch = new Branch
+            await _uow.Branches.AddAsync(new Branch
             {
-                Name = request.ProposedName!,
-                Location = request.ProposedLocation!,
-                Phone = request.ProposedPhone!,
-                WorkingHours = request.ProposedWorkingHours,
-                IsActive = true
-            };
-            await _uow.Branches.AddAsync(branch, ct);
+                Name         = r.ProposedName!,
+                Location     = r.ProposedLocation!,
+                Phone        = r.ProposedPhone!,
+                WorkingHours = r.ProposedWorkingHours,
+                IsActive     = true
+            }, ct);
         }
-        else if (request.RequestType == RequestType.Update && request.BranchId.HasValue)
+        else if (r.RequestType == RequestType.Update && r.BranchId.HasValue)
         {
-            var branch = await _uow.Branches.GetByIdAsync(request.BranchId.Value, ct);
-            if (branch != null)
-            {
-                if (request.ProposedName != null) branch.Name = request.ProposedName;
-                if (request.ProposedLocation != null) branch.Location = request.ProposedLocation;
-                if (request.ProposedPhone != null) branch.Phone = request.ProposedPhone;
-                if (request.ProposedWorkingHours != null) branch.WorkingHours = request.ProposedWorkingHours;
-            }
+            var branch = await _uow.Branches.GetByIdAsync(r.BranchId.Value, ct);
+            if (branch == null) return;
+            if (r.ProposedName         != null) branch.Name         = r.ProposedName;
+            if (r.ProposedLocation     != null) branch.Location     = r.ProposedLocation;
+            if (r.ProposedPhone        != null) branch.Phone        = r.ProposedPhone;
+            if (r.ProposedWorkingHours != null) branch.WorkingHours = r.ProposedWorkingHours;
         }
-        else if (request.RequestType == RequestType.Delete && request.BranchId.HasValue)
+        else if (r.RequestType == RequestType.Delete && r.BranchId.HasValue)
         {
-            var branch = await _uow.Branches.GetByIdAsync(request.BranchId.Value, ct);
+            var branch = await _uow.Branches.GetByIdAsync(r.BranchId.Value, ct);
             if (branch != null) branch.IsActive = false;
         }
     }
 
-    private static BranchModificationRequestResponseDto MapBranchRequestResponse(BranchModificationRequest r) => new()
+    private static BranchModificationRequestResponseDto MapBranchResponse(
+        BranchModificationRequest r) => new()
     {
-        Id = r.Id,
-        AdminId = r.AdminId,
-        AdminName = r.Admin?.FullName ?? string.Empty,
-        OwnerId = r.OwnerId,
-        OwnerName = r.Owner?.FullName ?? string.Empty,
-        BranchId = r.BranchId,
-        RequestType = r.RequestType,
-        Status = r.Status,
-        ProposedName = r.ProposedName,
-        ProposedLocation = r.ProposedLocation,
-        ProposedPhone = r.ProposedPhone,
+        Id                   = r.Id,
+        AdminId              = r.AdminId,
+        AdminName            = r.Admin?.FullName  ?? string.Empty,
+        OwnerId              = r.OwnerId,
+        OwnerName            = r.Owner?.FullName  ?? string.Empty,
+        BranchId             = r.BranchId,
+        RequestType          = r.RequestType,
+        Status               = r.Status,
+        ProposedName         = r.ProposedName,
+        ProposedLocation     = r.ProposedLocation,
+        ProposedPhone        = r.ProposedPhone,
         ProposedWorkingHours = r.ProposedWorkingHours,
-        CreatedAt = r.CreatedAt,
-        UpdatedAt = r.UpdatedAt
+        CreatedAt            = r.CreatedAt,
+        UpdatedAt            = r.UpdatedAt
     };
 }
