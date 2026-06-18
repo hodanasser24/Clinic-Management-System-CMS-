@@ -4,6 +4,9 @@ using DCMS.WebAPI.Extensions;
 using DCMS.WebAPI.Middleware;
 using FluentValidation.AspNetCore;
 using Hangfire;
+using Hangfire.AspNetCore;
+using Hangfire.Dashboard;
+using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -107,9 +110,11 @@ app.Run();
 // ── Hangfire dashboard authorization ──────────────────────────────────────────
 public class HangfireOwnerAuthorizationFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
 {
-    public bool Authorize(Hangfire.Dashboard.DashboardContext context)
+    public bool Authorize(DashboardContext context)
     {
         var httpContext = context.GetHttpContext();
+        if (httpContext == null) return false;
+
         return httpContext.User.Identity?.IsAuthenticated == true &&
                httpContext.User.IsInRole("Owner");
     }

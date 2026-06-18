@@ -5,7 +5,7 @@ namespace DCMS.Domain.Entities;
 public class Revenue : BaseEntity
 {
     public decimal Amount { get; set; }
-    public DateTime Date { get; set; }
+    public DateOnly Date { get; set; }
     public int AppointmentId { get; set; }
     public int BranchId { get; set; }
     public int ServiceId { get; set; }

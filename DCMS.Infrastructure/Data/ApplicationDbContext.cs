@@ -487,7 +487,7 @@ public class ApplicationDbContext : DbContext, IAppDbContext
             e.Property(m => m.Type).HasConversion<string>().HasMaxLength(20);
             e.Property(m => m.Status)
              .HasConversion<string>().HasMaxLength(20)
-             .HasDefaultValue(ContactMessageStatus.Pending);
+             .HasDefaultValue(ContactMessageStatus.New);
 
             e.Property(m => m.SenderName).IsRequired().HasMaxLength(100);
             e.Property(m => m.SenderEmail).IsRequired().HasMaxLength(150);
