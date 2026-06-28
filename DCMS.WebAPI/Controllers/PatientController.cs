@@ -2,6 +2,8 @@ using DCMS.Application.Exceptions;
 using DCMS.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using DCMS.Application.DTOs.Profile;
+using DCMS.Application.DTOs.Common;
 
 namespace DCMS.WebAPI.Controllers;
 
@@ -27,29 +29,35 @@ public class PatientController : ControllerBase
     /// </summary>
     [HttpGet("search")]
     public async Task<IActionResult> Search(
-        [FromQuery] string? name,
-        [FromQuery] string? phone,
-        [FromQuery] int?    id,
-        CancellationToken   ct)
+        [FromQuery] PatientQueryDto query,
+        CancellationToken ct)
     {
-        var all = await _uow.Patients.GetAllAsync(ct);
+        var paged = await _uow.Patients.GetQueriedPagedAsync(
+            query.Page, query.PageSize,
+            query.FullName, query.PhoneNumber, query.Id,
+            query.BranchId, query.ServiceId,
+            query.SortBy, query.SortDescending, ct);
 
-        var filtered = all
-            .Where(p =>
-                (id    == null || p.Id    == id)    &&
-                (name  == null || p.FullName.Contains(name,  StringComparison.OrdinalIgnoreCase)) &&
-                (phone == null || (p.Phone != null && p.Phone.Contains(phone))))
-            .Select(p => new
+        var result = new PagedResultDto<PatientProfileResponseDto>
+        {
+            TotalCount = paged.TotalCount,
+            Page = paged.Page,
+            PageSize = paged.PageSize,
+            Items = paged.Items.Select(p => new PatientProfileResponseDto
             {
-                p.Id,
-                p.FullName,
-                p.Email,
-                p.Phone,
-                p.DateOfBirth,
-                p.IsActive
-            });
+                Id = p.Id,
+                FullName = p.FullName,
+                Email = p.Email,
+                Phone = p.Phone,
+                DateOfBirth = p.DateOfBirth,
+                MedicalHistory = p.MedicalHistory,
+                IsFirstLogin = p.IsFirstLogin,
+                IsActive = p.IsActive,
+                CreatedAt = p.CreatedAt
+            }).ToList()
+        };
 
-        return Ok(filtered);
+        return Ok(result);
     }
 
     /// <summary>

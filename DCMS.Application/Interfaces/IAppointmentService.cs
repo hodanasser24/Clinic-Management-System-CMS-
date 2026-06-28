@@ -6,7 +6,7 @@ namespace DCMS.Application.Interfaces;
 public interface IAppointmentService
 {
     Task<AppointmentResponseDto>              GetByIdAsync(int id, CancellationToken ct = default);
-    Task<PagedResultDto<AppointmentSummaryDto>> GetAllAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<PagedResultDto<AppointmentSummaryDto>> GetAllAsync(AppointmentQueryDto queryDto, CancellationToken ct = default);
     Task<PagedResultDto<AppointmentSummaryDto>> GetByPatientAsync(int patientId, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResultDto<AppointmentSummaryDto>> GetByDoctorAsync(int doctorId, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResultDto<AppointmentSummaryDto>> GetUrgentAsync(int page, int pageSize, CancellationToken ct = default);

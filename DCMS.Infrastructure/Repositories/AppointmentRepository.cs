@@ -74,11 +74,29 @@ public class AppointmentRepository : GenericRepository<Appointment>, IAppointmen
     public async Task<PagedResult<Appointment>> GetPagedWithDetailsAsync(
         int page, int pageSize,
         Expression<Func<Appointment, bool>>? predicate = null,
+        string? sortBy = null, bool sortDescending = true,
         CancellationToken ct = default)
     {
         var query = WithDetails();
         if (predicate != null) query = query.Where(predicate);
-        query = query.OrderByDescending(a => a.Date).ThenBy(a => a.StartTime);
+
+        // Sorting logic
+        if (string.Equals(sortBy, "CreatedAt", StringComparison.OrdinalIgnoreCase))
+        {
+            query = sortDescending ? query.OrderByDescending(a => a.CreatedAt) : query.OrderBy(a => a.CreatedAt);
+        }
+        else if (string.Equals(sortBy, "Date", StringComparison.OrdinalIgnoreCase))
+        {
+            query = sortDescending
+                ? query.OrderByDescending(a => a.Date).ThenByDescending(a => a.StartTime)
+                : query.OrderBy(a => a.Date).ThenBy(a => a.StartTime);
+        }
+        else
+        {
+            // Default sort (original behavior)
+            query = query.OrderByDescending(a => a.Date).ThenBy(a => a.StartTime);
+        }
+
         return await ToPagedAsync(query, page, pageSize, ct);
     }
 

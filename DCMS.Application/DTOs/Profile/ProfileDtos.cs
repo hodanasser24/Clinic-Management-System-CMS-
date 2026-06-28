@@ -32,6 +32,7 @@ public class PatientProfileResponseDto
     public DateOnly DateOfBirth { get; set; }
     public string? MedicalHistory { get; set; }
     public bool IsFirstLogin { get; set; }
+    public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

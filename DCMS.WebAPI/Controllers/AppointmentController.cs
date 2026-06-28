@@ -26,10 +26,10 @@ public class AppointmentController : ControllerBase
     [Authorize(Roles = "Admin,Owner")]
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] AppointmentQueryDto query,
         CancellationToken ct = default)
     {
-        var result = await _appointmentService.GetAllAsync(page, pageSize, ct);
+        var result = await _appointmentService.GetAllAsync(query, ct);
         return Ok(result);
     }
 

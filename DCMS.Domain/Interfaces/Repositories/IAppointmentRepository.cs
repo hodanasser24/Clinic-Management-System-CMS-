@@ -13,7 +13,7 @@ public interface IAppointmentRepository : IGenericRepository<Appointment>
 
     // Detail queries
     Task<Appointment?> GetByIdWithDetailsAsync(int id, CancellationToken ct = default);
-    Task<PagedResult<Appointment>> GetPagedWithDetailsAsync(int page, int pageSize, Expression<Func<Appointment, bool>>? predicate = null, CancellationToken ct = default);
+    Task<PagedResult<Appointment>> GetPagedWithDetailsAsync(int page, int pageSize, Expression<Func<Appointment, bool>>? predicate = null, string? sortBy = null, bool sortDescending = true, CancellationToken ct = default);
     Task<PagedResult<Appointment>> GetByPatientWithDetailsAsync(int patientId, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResult<Appointment>> GetByDoctorWithDetailsAsync(int doctorId, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResult<Appointment>> GetUpcomingByPatientAsync(int patientId, int page, int pageSize, CancellationToken ct = default);

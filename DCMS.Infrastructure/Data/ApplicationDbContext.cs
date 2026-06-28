@@ -180,8 +180,8 @@ public class ApplicationDbContext : DbContext, IAppDbContext
 
             // BR-2: Filtered unique index — prevent double-booking
             e.HasIndex(a => new { a.DoctorId, a.Date, a.StartTime })
-             .HasFilter("[Status] NOT IN ('Cancelled','Rejected')")
-             .HasDatabaseName("UX_Appointment_Doctor_Date_StartTime_Active");
+            .HasFilter("[Status] <> 'Cancelled' AND [Status] <> 'Rejected'")
+            .HasDatabaseName("UX_Appointment_Doctor_Date_StartTime_Active");
 
             // Phase 4 performance index
             e.HasIndex(a => new { a.PatientId, a.Date })

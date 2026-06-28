@@ -5,6 +5,7 @@ using DCMS.Application.Interfaces;
 using DCMS.Domain.Entities;
 using DCMS.Domain.Enums;
 using DCMS.Domain.Interfaces;
+using System.Linq.Expressions;
 
 namespace DCMS.Application.Services;
 
@@ -28,9 +29,21 @@ public class AppointmentService : IAppointmentService
         return MapToResponse(a);
     }
 
-    public async Task<PagedResultDto<AppointmentSummaryDto>> GetAllAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResultDto<AppointmentSummaryDto>> GetAllAsync(AppointmentQueryDto queryDto, CancellationToken ct = default)
     {
-        var paged = await _uow.Appointments.GetPagedWithDetailsAsync(page, pageSize, ct: ct);
+        Expression<Func<Appointment, bool>> predicate = a =>
+            (!queryDto.Id.HasValue || a.Id == queryDto.Id.Value) &&
+            (string.IsNullOrEmpty(queryDto.PatientName) || (a.Patient != null && a.Patient.FullName.Contains(queryDto.PatientName))) &&
+            (string.IsNullOrEmpty(queryDto.DoctorName) || (a.Doctor != null && a.Doctor.FullName.Contains(queryDto.DoctorName))) &&
+            (string.IsNullOrEmpty(queryDto.PatientPhone) || (a.Patient != null && a.Patient.Phone != null && a.Patient.Phone.Contains(queryDto.PatientPhone))) &&
+            (!queryDto.Status.HasValue || a.Status == queryDto.Status.Value) &&
+            (!queryDto.DoctorId.HasValue || a.DoctorId == queryDto.DoctorId.Value) &&
+            (!queryDto.FromDate.HasValue || a.Date >= queryDto.FromDate.Value) &&
+            (!queryDto.ToDate.HasValue || a.Date <= queryDto.ToDate.Value);
+
+        var paged = await _uow.Appointments.GetPagedWithDetailsAsync(
+            queryDto.Page, queryDto.PageSize, predicate, queryDto.SortBy, queryDto.SortDescending, ct);
+            
         return ToSummaryPaged(paged);
     }
 
@@ -51,7 +64,7 @@ public class AppointmentService : IAppointmentService
     public async Task<PagedResultDto<AppointmentSummaryDto>> GetUrgentAsync(
         int page, int pageSize, CancellationToken ct = default)
     {
-        var paged = await _uow.Appointments.GetPagedWithDetailsAsync(page, pageSize, a => a.IsUrgent, ct);
+        var paged = await _uow.Appointments.GetPagedWithDetailsAsync(page, pageSize, a => a.IsUrgent, ct: ct);
         return ToSummaryPaged(paged);
     }
 
@@ -59,7 +72,7 @@ public class AppointmentService : IAppointmentService
         DateOnly from, DateOnly to, int page, int pageSize, CancellationToken ct = default)
     {
         var paged = await _uow.Appointments.GetPagedWithDetailsAsync(
-            page, pageSize, a => a.IsUrgent && a.Date >= from && a.Date <= to, ct);
+            page, pageSize, a => a.IsUrgent && a.Date >= from && a.Date <= to, ct: ct);
         return ToSummaryPaged(paged);
     }
 
