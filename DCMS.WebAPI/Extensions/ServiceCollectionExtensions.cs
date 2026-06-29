@@ -42,10 +42,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRevenueService,             RevenueService>();
         services.AddScoped<IContactMessageService,      ContactMessageService>();
 
-        // ASP.NET Core Identity PasswordHasher (used by AuthService and OwnerService)
-        services.AddScoped<Microsoft.AspNetCore.Identity.IPasswordHasher<DCMS.Domain.Entities.User>,
-            Microsoft.AspNetCore.Identity.PasswordHasher<DCMS.Domain.Entities.User>>();
-
         return services;
     }
 
