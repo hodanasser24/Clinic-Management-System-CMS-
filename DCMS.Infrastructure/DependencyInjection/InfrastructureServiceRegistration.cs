@@ -8,7 +8,7 @@ using DCMS.Infrastructure.Repositories;
 using DCMS.Infrastructure.Services;
 using DCMS.Infrastructure.UnitOfWork;
 using Hangfire;
-using Hangfire.SqlServer;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +24,7 @@ public static class InfrastructureServiceRegistration
     {
         // ── Database ───────────────────────────────────────────────────────────
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(
+            options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
                 sql => sql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
 
@@ -42,13 +42,13 @@ public static class InfrastructureServiceRegistration
         // ── Specialized Repositories ───────────────────────────────────────────
         // These MUST be registered before UnitOfWork, which receives them via DI.
         // Missing registrations here were the root cause of the runtime DI crash.
-        services.AddScoped<IPatientRepository,     PatientRepository>();
-        services.AddScoped<IDoctorRepository,      DoctorRepository>();
-        services.AddScoped<IAdminRepository,       AdminRepository>();
-        services.AddScoped<IGuestRepository,       GuestRepository>();
+        services.AddScoped<IPatientRepository, PatientRepository>();
+        services.AddScoped<IDoctorRepository, DoctorRepository>();
+        services.AddScoped<IAdminRepository, AdminRepository>();
+        services.AddScoped<IGuestRepository, GuestRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
-        services.AddScoped<IScheduleRepository,    ScheduleRepository>();
-        services.AddScoped<IReportRepository,      ReportRepository>();
+        services.AddScoped<IScheduleRepository, ScheduleRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
 
         // ── Unit of Work ───────────────────────────────────────────────────────
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
@@ -61,16 +61,10 @@ public static class InfrastructureServiceRegistration
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
-            .UseSqlServerStorage(
-                configuration.GetConnectionString("DefaultConnection"),
-                new SqlServerStorageOptions
-                {
-                    CommandBatchMaxTimeout      = TimeSpan.FromMinutes(5),
-                    SlidingInvisibilityTimeout  = TimeSpan.FromMinutes(5),
-                    QueuePollInterval           = TimeSpan.Zero,
-                    UseRecommendedIsolationLevel = true,
-                    DisableGlobalLocks          = true
-                }));
+            .UsePostgreSqlStorage(options =>
+            {
+                options.UseNpgsqlConnection(configuration.GetConnectionString("DefaultConnection"));
+            }));
 
         services.AddHangfireServer();
 
