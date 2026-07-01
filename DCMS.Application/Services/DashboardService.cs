@@ -179,4 +179,77 @@ public class DashboardService : IDashboardService
     }
 
     private static string Esc(string v) => v.Contains(',') ? $"\"{v}\"" : v;
+
+    public async Task<DoctorDailyDashboardDto> GetDoctorDailyTrackingAsync(int doctorId, CancellationToken ct = default)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var todayStartUtc = DateTime.UtcNow.Date;
+        var tomorrowStartUtc = todayStartUtc.AddDays(1);
+
+        // 1. Appointments for today
+        var appointmentsToday = (await _uow.Appointments.FindAsync(
+            a => a.DoctorId == doctorId && a.Date == today, ct)).ToList();
+
+        var totalAppointments = appointmentsToday.Count;
+        var completedAppointments = appointmentsToday.Count(a => a.Status == AppointmentStatus.Completed);
+        var pendingAppointments = appointmentsToday.Count(a => a.Status == AppointmentStatus.Pending);
+        var cancelledAppointments = appointmentsToday.Count(a => a.Status == AppointmentStatus.Cancelled);
+
+        // Patients seen today (distinct from completed appointments)
+        var patientsSeen = appointmentsToday
+            .Where(a => a.Status == AppointmentStatus.Completed)
+            .Select(a => a.PatientId)
+            .Distinct()
+            .Count();
+
+        // 2. Reports created today
+        var reportsToday = (await _uow.Reports.FindAsync(
+            r => r.DoctorId == doctorId && r.CreatedAt >= todayStartUtc && r.CreatedAt < tomorrowStartUtc, ct)).ToList();
+
+        // 3. Prescriptions created today
+        var prescriptionsToday = (await _uow.Prescriptions.FindAsync(
+            p => p.Report != null && p.Report.DoctorId == doctorId && p.CreatedAt >= todayStartUtc && p.CreatedAt < tomorrowStartUtc, ct)).ToList();
+
+        // 4. Dental charts (ToothRecords) updated today
+        var toothRecordsToday = (await _uow.ToothRecords.FindAsync(
+            t => t.LastUpdatedInReport != null && t.LastUpdatedInReport.DoctorId == doctorId && t.UpdatedAt >= todayStartUtc && t.UpdatedAt < tomorrowStartUtc, ct)).ToList();
+        
+        var dentalChartsUpdated = toothRecordsToday.Select(t => t.ChartId).Distinct().Count();
+
+        // 5. Build Timeline
+        var timeline = new List<DoctorActivityDto>();
+
+        foreach (var a in appointmentsToday)
+        {
+            if (a.CreatedAt >= todayStartUtc && a.CreatedAt < tomorrowStartUtc)
+                timeline.Add(new DoctorActivityDto { Time = a.CreatedAt, ActionType = "Created", EntityType = "Appointment", Description = $"Appointment scheduled for {a.StartTime:HH:mm}" });
+            
+            if (a.Status == AppointmentStatus.Completed && a.CompletedAt >= todayStartUtc && a.CompletedAt < tomorrowStartUtc)
+                timeline.Add(new DoctorActivityDto { Time = a.CompletedAt.Value, ActionType = "Completed", EntityType = "Appointment", Description = $"Appointment completed for {a.StartTime:HH:mm}" });
+            else if (a.Status == AppointmentStatus.Cancelled && a.CancelledAt >= todayStartUtc && a.CancelledAt < tomorrowStartUtc)
+                timeline.Add(new DoctorActivityDto { Time = a.CancelledAt.Value, ActionType = "Cancelled", EntityType = "Appointment", Description = $"Appointment cancelled for {a.StartTime:HH:mm}" });
+        }
+
+        foreach (var r in reportsToday)
+            timeline.Add(new DoctorActivityDto { Time = r.CreatedAt, ActionType = "Created", EntityType = "Report", Description = "Clinical report created" });
+
+        foreach (var p in prescriptionsToday)
+            timeline.Add(new DoctorActivityDto { Time = p.CreatedAt, ActionType = "Created", EntityType = "Prescription", Description = "Prescription issued" });
+
+        foreach (var t in toothRecordsToday)
+            timeline.Add(new DoctorActivityDto { Time = t.UpdatedAt, ActionType = "Updated", EntityType = "DentalChart", Description = $"Tooth #{t.ToothNumber} record updated" });
+
+        return new DoctorDailyDashboardDto
+        {
+            TotalAppointments = totalAppointments,
+            CompletedAppointments = completedAppointments,
+            PendingAppointments = pendingAppointments,
+            CancelledAppointments = cancelledAppointments,
+            PatientsSeen = patientsSeen,
+            ReportsCreated = reportsToday.Count,
+            PrescriptionsCreated = prescriptionsToday.Count,
+            DentalChartsUpdated = dentalChartsUpdated,
+            ActivityTimeline = timeline.OrderByDescending(x => x.Time).ToList()
+        };
+    }
 }

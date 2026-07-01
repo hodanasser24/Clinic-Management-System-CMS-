@@ -9,4 +9,6 @@ public interface IDashboardService
     Task<WeeklyReportDto> GetWeeklyReportAsync(DateOnly weekStart, CancellationToken ct = default);
     Task<byte[]> ExportDailyReportAsCsvAsync(DateOnly date, CancellationToken ct = default);
     Task<byte[]> ExportWeeklyReportAsCsvAsync(DateOnly weekStart, CancellationToken ct = default);
+    
+    Task<DoctorDailyDashboardDto> GetDoctorDailyTrackingAsync(int doctorId, CancellationToken ct = default);
 }

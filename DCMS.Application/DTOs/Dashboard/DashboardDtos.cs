@@ -56,3 +56,26 @@ public class AppointmentSummaryExportDto
     public string Status { get; set; } = null!;
     public bool IsUrgent { get; set; }
 }
+
+public class DoctorDailyDashboardDto
+{
+    public int TotalAppointments { get; set; }
+    public int CompletedAppointments { get; set; }
+    public int PendingAppointments { get; set; }
+    public int CancelledAppointments { get; set; }
+    
+    public int PatientsSeen { get; set; }
+    public int ReportsCreated { get; set; }
+    public int PrescriptionsCreated { get; set; }
+    public int DentalChartsUpdated { get; set; }
+
+    public List<DoctorActivityDto> ActivityTimeline { get; set; } = new();
+}
+
+public class DoctorActivityDto
+{
+    public DateTime Time { get; set; }
+    public string ActionType { get; set; } = string.Empty;
+    public string EntityType { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
