@@ -21,3 +21,23 @@ public class CreateReportValidator : AbstractValidator<CreateReportRequestDto>
         RuleFor(x => x.CaseStatus).IsInEnum().WithMessage("CaseStatus is invalid.");
     }
 }
+
+public class UpdateReportRequestValidator : AbstractValidator<UpdateReportRequestDto>
+{
+    public UpdateReportRequestValidator()
+    {
+        RuleFor(x => x.Diagnosis)
+            .NotEmpty().WithMessage("Diagnosis is required.")
+            .MaximumLength(2000).WithMessage("Diagnosis must not exceed 2000 characters.");
+
+        RuleFor(x => x.InternalNotes)
+            .MaximumLength(3000).WithMessage("InternalNotes must not exceed 3000 characters.")
+            .When(x => x.InternalNotes != null);
+
+        RuleFor(x => x.Notes)
+            .MaximumLength(2000).WithMessage("Notes must not exceed 2000 characters.")
+            .When(x => x.Notes != null);
+
+        RuleFor(x => x.CaseStatus).IsInEnum().WithMessage("CaseStatus is invalid.");
+    }
+}

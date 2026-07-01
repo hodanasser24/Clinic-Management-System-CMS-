@@ -30,3 +30,46 @@ public class RescheduleAppointmentValidator : AbstractValidator<RescheduleAppoin
             .WithMessage("New date cannot be in the past.");
     }
 }
+
+public class CancelAppointmentRequestValidator : AbstractValidator<CancelAppointmentRequestDto>
+{
+    public CancelAppointmentRequestValidator()
+    {
+        RuleFor(x => x.Reason)
+            .MaximumLength(500).WithMessage("Reason must not exceed 500 characters.")
+            .When(x => x.Reason != null);
+    }
+}
+
+public class ConfirmAppointmentRequestValidator : AbstractValidator<ConfirmAppointmentRequestDto>
+{
+    public ConfirmAppointmentRequestValidator()
+    {
+        RuleFor(x => x.AdminId).GreaterThan(0).WithMessage("AdminId must be a valid ID.");
+    }
+}
+
+public class RejectAppointmentRequestValidator : AbstractValidator<RejectAppointmentRequestDto>
+{
+    public RejectAppointmentRequestValidator()
+    {
+        RuleFor(x => x.AdminId).GreaterThan(0).WithMessage("AdminId must be a valid ID.");
+    }
+}
+
+public class MarkUrgentRequestValidator : AbstractValidator<MarkUrgentRequestDto>
+{
+    public MarkUrgentRequestValidator()
+    {
+        RuleFor(x => x.DoctorId).GreaterThan(0).WithMessage("DoctorId must be a valid ID.");
+    }
+}
+
+public class MarkAttendanceRequestValidator : AbstractValidator<MarkAttendanceRequestDto>
+{
+    public MarkAttendanceRequestValidator()
+    {
+        RuleFor(x => x.AttendanceStatus)
+            .IsInEnum().WithMessage("Invalid Attendance Status.");
+    }
+}

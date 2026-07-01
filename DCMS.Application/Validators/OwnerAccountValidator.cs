@@ -25,3 +25,21 @@ public class CreateAdminAccountValidator : AbstractValidator<CreateAdminAccountR
         RuleFor(x => x.Password).NotEmpty().MinimumLength(8).WithMessage("Password must be at least 8 characters.");
     }
 }
+
+public class DeactivateAccountRequestValidator : AbstractValidator<DeactivateAccountRequestDto>
+{
+    public DeactivateAccountRequestValidator()
+    {
+        RuleFor(x => x.Reason)
+            .MaximumLength(500).WithMessage("Reason must not exceed 500 characters.")
+            .When(x => x.Reason != null);
+    }
+}
+
+public class ActivateOfferRequestValidator : AbstractValidator<ActivateOfferRequestDto>
+{
+    public ActivateOfferRequestValidator()
+    {
+        RuleFor(x => x.OfferId).GreaterThan(0).WithMessage("OfferId must be a valid ID.");
+    }
+}
