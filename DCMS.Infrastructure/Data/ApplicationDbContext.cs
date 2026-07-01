@@ -180,7 +180,7 @@ public class ApplicationDbContext : DbContext, IAppDbContext
 
             // BR-2: Filtered unique index — prevent double-booking
             e.HasIndex(a => new { a.DoctorId, a.Date, a.StartTime })
-            .HasFilter("[Status] <> 'Cancelled' AND [Status] <> 'Rejected'")
+            .HasFilter("\"Status\" NOT IN ('Cancelled', 'Rejected')")
             .HasDatabaseName("UX_Appointment_Doctor_Date_StartTime_Active");
 
             // Phase 4 performance index
@@ -434,8 +434,8 @@ public class ApplicationDbContext : DbContext, IAppDbContext
             e.Property(l => l.ActionType).IsRequired().HasMaxLength(200);
             e.Property(l => l.UserRole).HasMaxLength(50);
             e.Property(l => l.IPAddress).HasMaxLength(45);
-            e.Property(l => l.OldValues).HasColumnType("nvarchar(max)");
-            e.Property(l => l.NewValues).HasColumnType("nvarchar(max)");
+			e.Property(l => l.OldValues);
+			e.Property(l => l.NewValues);
             e.Property(l => l.RetentionDate).IsRequired();
             e.HasOne(l => l.User).WithMany(u => u.SystemLogs)
              .HasForeignKey(l => l.UserId).OnDelete(DeleteBehavior.Restrict);
