@@ -4,13 +4,20 @@ using DCMS.Application.Exceptions;
 using DCMS.Application.Interfaces;
 using DCMS.Domain.Interfaces;
 
+using AutoMapper;
+
 namespace DCMS.Application.Services;
 
 public class SystemLogService : ISystemLogService
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
 
-    public SystemLogService(IUnitOfWork uow) => _uow = uow;
+    public SystemLogService(IUnitOfWork uow, IMapper mapper)
+    {
+        _uow = uow;
+        _mapper = mapper;
+    }
 
     /// <summary>Owner: all logs, with optional filters.</summary>
     public async Task<PagedResultDto<SystemLogResponseDto>> GetAllAsync(SystemLogFilterDto filter, int page, int pageSize, CancellationToken ct = default)
@@ -25,7 +32,7 @@ public class SystemLogService : ISystemLogService
 
         return new PagedResultDto<SystemLogResponseDto>
         {
-            Items = paged.Items.Select(MapToResponse).ToList(),
+            Items = _mapper.Map<List<SystemLogResponseDto>>(paged.Items),
             TotalCount = paged.TotalCount,
             Page = paged.Page,
             PageSize = paged.PageSize
@@ -41,7 +48,7 @@ public class SystemLogService : ISystemLogService
 
         return new PagedResultDto<SystemLogResponseDto>
         {
-            Items = paged.Items.Select(MapToResponse).ToList(),
+            Items = _mapper.Map<List<SystemLogResponseDto>>(paged.Items),
             TotalCount = paged.TotalCount,
             Page = paged.Page,
             PageSize = paged.PageSize
@@ -52,22 +59,6 @@ public class SystemLogService : ISystemLogService
     {
         var log = await _uow.SystemLogs.GetByIdAsync(id, ct);
         if (log == null) throw new NotFoundException($"System log {id} not found.");
-        return MapToResponse(log);
+        return _mapper.Map<SystemLogResponseDto>(log);
     }
-
-    private static SystemLogResponseDto MapToResponse(DCMS.Domain.Entities.SystemLog l) => new()
-    {
-        Id = l.Id,
-        UserId = l.UserId,
-        UserRole = l.UserRole,
-        ActionType = l.ActionType,
-        EntityType = l.EntityType,
-        EntityId = l.EntityId,
-        HttpStatusCode = l.HttpStatusCode,
-        IPAddress = l.IPAddress,
-        OldValues = l.OldValues,
-        NewValues = l.NewValues,
-        Date = l.Date,
-        RetentionDate = l.RetentionDate
-    };
 }

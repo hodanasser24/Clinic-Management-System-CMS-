@@ -6,18 +6,22 @@ using DCMS.Domain.Entities;
 using DCMS.Domain.Enums;
 using DCMS.Domain.Interfaces;
 
+using AutoMapper;
+
 namespace DCMS.Application.Services;
 
 public class ModificationRequestService : IModificationRequestService
 {
     private readonly IUnitOfWork          _uow;
     private readonly INotificationService _notificationService;
+    private readonly IMapper              _mapper;
 
     public ModificationRequestService(
-        IUnitOfWork uow, INotificationService notificationService)
+        IUnitOfWork uow, INotificationService notificationService, IMapper mapper)
     {
         _uow                 = uow;
         _notificationService = notificationService;
+        _mapper              = mapper;
     }
 
     // ── SERVICE MODIFICATION ──────────────────────────────────────────────────
@@ -153,24 +157,10 @@ public class ModificationRequestService : IModificationRequestService
     {
         var admin = await _uow.Admins.GetByIdAsync(r.AdminId, ct);
         var owner = await _uow.Doctors.GetByIdAsync(r.OwnerId, ct);
-        return new ServiceModificationRequestResponseDto
-        {
-            Id                              = r.Id,
-            AdminId                         = r.AdminId,
-            AdminName                       = admin?.FullName ?? string.Empty,
-            OwnerId                         = r.OwnerId,
-            OwnerName                       = owner?.FullName ?? string.Empty,
-            ServiceId                       = r.ServiceId,
-            RequestType                     = r.RequestType,
-            Status                          = r.Status,
-            ProposedName                    = r.ProposedName,
-            ProposedPrice                   = r.ProposedPrice,
-            ProposedDescription             = r.ProposedDescription,
-            ProposedEstimatedDurationMinutes = r.ProposedEstimatedDurationMinutes,
-            ApprovalDate                    = r.ApprovalDate,
-            CreatedAt                       = r.CreatedAt,
-            UpdatedAt                       = r.UpdatedAt
-        };
+        var dto = _mapper.Map<ServiceModificationRequestResponseDto>(r);
+        dto.AdminName = admin?.FullName ?? string.Empty;
+        dto.OwnerName = owner?.FullName ?? string.Empty;
+        return dto;
     }
 
     // ── FAQ MODIFICATION ──────────────────────────────────────────────────────
@@ -283,21 +273,10 @@ public class ModificationRequestService : IModificationRequestService
     {
         var admin = await _uow.Admins.GetByIdAsync(r.AdminId, ct);
         var owner = await _uow.Doctors.GetByIdAsync(r.OwnerId, ct);
-        return new FAQModificationRequestResponseDto
-        {
-            Id               = r.Id,
-            AdminId          = r.AdminId,
-            AdminName        = admin?.FullName ?? string.Empty,
-            OwnerId          = r.OwnerId,
-            OwnerName        = owner?.FullName ?? string.Empty,
-            FAQId            = r.FAQId,
-            RequestType      = r.RequestType,
-            Status           = r.Status,
-            ProposedQuestion = r.ProposedQuestion,
-            ProposedAnswer   = r.ProposedAnswer,
-            CreatedAt        = r.CreatedAt,
-            UpdatedAt        = r.UpdatedAt
-        };
+        var dto = _mapper.Map<FAQModificationRequestResponseDto>(r);
+        dto.AdminName = admin?.FullName ?? string.Empty;
+        dto.OwnerName = owner?.FullName ?? string.Empty;
+        return dto;
     }
 
     // ── OFFER MODIFICATION ────────────────────────────────────────────────────
@@ -433,24 +412,14 @@ public class ModificationRequestService : IModificationRequestService
         }
     }
 
-    private static OfferDiscountModificationRequestResponseDto MapOfferResponse(
-        OfferDiscountModificationRequest r) => new()
+    private OfferDiscountModificationRequestResponseDto MapOfferResponse(
+        OfferDiscountModificationRequest r)
     {
-        Id                         = r.Id,
-        AdminId                    = r.AdminId,
-        AdminName                  = r.Admin?.FullName  ?? string.Empty,
-        OwnerId                    = r.OwnerId,
-        OwnerName                  = r.Owner?.FullName  ?? string.Empty,
-        OfferId                    = r.OfferId,
-        RequestType                = r.RequestType,
-        Status                     = r.Status,
-        ProposedTitle              = r.ProposedTitle,
-        ProposedDiscountPercentage = r.ProposedDiscountPercentage,
-        ProposedStartDate          = r.ProposedStartDate,
-        ProposedEndDate            = r.ProposedEndDate,
-        CreatedAt                  = r.CreatedAt,
-        UpdatedAt                  = r.UpdatedAt
-    };
+        var dto = _mapper.Map<OfferDiscountModificationRequestResponseDto>(r);
+        dto.AdminName = r.Admin?.FullName ?? string.Empty;
+        dto.OwnerName = r.Owner?.FullName ?? string.Empty;
+        return dto;
+    }
 
     // ── BRANCH MODIFICATION ───────────────────────────────────────────────────
 
@@ -575,22 +544,12 @@ public class ModificationRequestService : IModificationRequestService
         }
     }
 
-    private static BranchModificationRequestResponseDto MapBranchResponse(
-        BranchModificationRequest r) => new()
+    private BranchModificationRequestResponseDto MapBranchResponse(
+        BranchModificationRequest r)
     {
-        Id                   = r.Id,
-        AdminId              = r.AdminId,
-        AdminName            = r.Admin?.FullName  ?? string.Empty,
-        OwnerId              = r.OwnerId,
-        OwnerName            = r.Owner?.FullName  ?? string.Empty,
-        BranchId             = r.BranchId,
-        RequestType          = r.RequestType,
-        Status               = r.Status,
-        ProposedName         = r.ProposedName,
-        ProposedLocation     = r.ProposedLocation,
-        ProposedPhone        = r.ProposedPhone,
-        ProposedWorkingHours = r.ProposedWorkingHours,
-        CreatedAt            = r.CreatedAt,
-        UpdatedAt            = r.UpdatedAt
-    };
+        var dto = _mapper.Map<BranchModificationRequestResponseDto>(r);
+        dto.AdminName = r.Admin?.FullName ?? string.Empty;
+        dto.OwnerName = r.Owner?.FullName ?? string.Empty;
+        return dto;
+    }
 }

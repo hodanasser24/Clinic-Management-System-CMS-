@@ -6,17 +6,21 @@ using DCMS.Domain.Entities;
 using DCMS.Domain.Enums;
 using DCMS.Domain.Interfaces;
 
+using AutoMapper;
+
 namespace DCMS.Application.Services;
 
 public class ReportService : IReportService
 {
     private readonly IUnitOfWork            _uow;
     private readonly INotificationService   _notificationService;
+    private readonly IMapper                _mapper;
 
-    public ReportService(IUnitOfWork uow, INotificationService notificationService)
+    public ReportService(IUnitOfWork uow, INotificationService notificationService, IMapper mapper)
     {
         _uow                 = uow;
         _notificationService = notificationService;
+        _mapper              = mapper;
     }
 
     public async Task<ReportResponseDto> GetByIdAsync(int id, UserRole callerRole, CancellationToken ct = default)
@@ -182,82 +186,20 @@ public class ReportService : IReportService
     /// Admin receives AdminReportResponseDto (no InternalNotes, but AllowedFood/RestrictedFood).
     /// Patient receives the base ReportResponseDto.
     /// </summary>
-    private static ReportResponseDto MapToResponse(Report r, UserRole callerRole)
+    private ReportResponseDto MapToResponse(Report r, UserRole callerRole)
     {
-        var patientName = r.Patient?.FullName ?? string.Empty;
-        var doctorName  = r.Doctor?.FullName  ?? string.Empty;
-
         if (callerRole is UserRole.Doctor or UserRole.Owner)
         {
-            return new DoctorReportResponseDto
-            {
-                Id                   = r.Id,
-                AppointmentId        = r.AppointmentId,
-                PatientId            = r.PatientId,
-                PatientName          = patientName,
-                DoctorId             = r.DoctorId,
-                DoctorName           = doctorName,
-                Diagnosis            = r.Diagnosis,
-                Treatment            = r.Treatment,
-                Notes                = r.Notes,
-                InternalNotes        = r.InternalNotes,  // Doctor/Owner ONLY (BR-57)
-                CaseStatus           = r.CaseStatus,
-                FollowUpInstructions = r.FollowUpInstructions,
-                TreatmentPlan        = r.TreatmentPlan,
-                DietInstructions     = r.DietInstructions,
-                AllowedFood          = r.AllowedFood,
-                RestrictedFood       = r.RestrictedFood,
-                HomeCareInstructions = r.HomeCareInstructions,
-                CreatedAt            = r.CreatedAt,
-                UpdatedAt            = r.UpdatedAt
-            };
+            return _mapper.Map<DoctorReportResponseDto>(r);
         }
 
         if (callerRole is UserRole.Admin)
         {
             // Admin sees clinical fields but NOT InternalNotes (BR-57)
-            return new AdminReportResponseDto
-            {
-                Id                   = r.Id,
-                AppointmentId        = r.AppointmentId,
-                PatientId            = r.PatientId,
-                PatientName          = patientName,
-                DoctorId             = r.DoctorId,
-                DoctorName           = doctorName,
-                Diagnosis            = r.Diagnosis,
-                Treatment            = r.Treatment,
-                Notes                = r.Notes,
-                CaseStatus           = r.CaseStatus,
-                FollowUpInstructions = r.FollowUpInstructions,
-                TreatmentPlan        = r.TreatmentPlan,
-                DietInstructions     = r.DietInstructions,
-                AllowedFood          = r.AllowedFood,       // Admins can see these
-                RestrictedFood       = r.RestrictedFood,
-                HomeCareInstructions = r.HomeCareInstructions,
-                CreatedAt            = r.CreatedAt,
-                UpdatedAt            = r.UpdatedAt
-            };
+            return _mapper.Map<AdminReportResponseDto>(r);
         }
 
         // Patient: base DTO only — no internal or dietary detail fields
-        return new ReportResponseDto
-        {
-            Id                   = r.Id,
-            AppointmentId        = r.AppointmentId,
-            PatientId            = r.PatientId,
-            PatientName          = patientName,
-            DoctorId             = r.DoctorId,
-            DoctorName           = doctorName,
-            Diagnosis            = r.Diagnosis,
-            Treatment            = r.Treatment,
-            Notes                = r.Notes,
-            CaseStatus           = r.CaseStatus,
-            FollowUpInstructions = r.FollowUpInstructions,
-            TreatmentPlan        = r.TreatmentPlan,
-            DietInstructions     = r.DietInstructions,
-            HomeCareInstructions = r.HomeCareInstructions,
-            CreatedAt            = r.CreatedAt,
-            UpdatedAt            = r.UpdatedAt
-        };
+        return _mapper.Map<ReportResponseDto>(r);
     }
 }

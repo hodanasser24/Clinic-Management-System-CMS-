@@ -115,8 +115,17 @@ public class MappingProfile : Profile
             .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner == null ? "" : s.Owner.FullName));
 
         // ── Report ────────────────────────────────────────────────────────────
-        // NOTE: Report responses are NOT mapped via AutoMapper — ReportService.MapToResponse
-        // applies BR-57 role filtering manually to control InternalNotes visibility.
+        CreateMap<Report, ReportResponseDto>()
+            .ForMember(d => d.PatientName, o => o.MapFrom(s => s.Patient == null ? "" : s.Patient.FullName))
+            .ForMember(d => d.DoctorName,  o => o.MapFrom(s => s.Doctor  == null ? "" : s.Doctor.FullName));
+            
+        CreateMap<Report, AdminReportResponseDto>()
+            .IncludeBase<Report, ReportResponseDto>();
+
+        CreateMap<Report, DoctorReportResponseDto>()
+            .IncludeBase<Report, AdminReportResponseDto>();
+            
+        // NOTE: ReportService.MapToResponse uses the above DTOs directly via AutoMapper but applies BR-57 role filtering manually by choosing which DTO to map to.
         CreateMap<CreateReportRequestDto, Report>();
         CreateMap<UpdateReportRequestDto, Report>()
             .ForAllMembers(o => o.Condition((_, _, src) => src != null));

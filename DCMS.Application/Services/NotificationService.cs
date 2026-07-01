@@ -6,15 +6,19 @@ using DCMS.Domain.Entities;
 using DCMS.Domain.Enums;
 using DCMS.Domain.Interfaces;
 
+using AutoMapper;
+
 namespace DCMS.Application.Services;
 
 public class NotificationService : INotificationService
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMapper     _mapper;
 
-    public NotificationService(IUnitOfWork uow)
+    public NotificationService(IUnitOfWork uow, IMapper mapper)
     {
-        _uow = uow;
+        _uow    = uow;
+        _mapper = mapper;
     }
 
     // FIXED: predicate passed BEFORE paging — was filtering in-memory after paging (bug)
@@ -25,7 +29,7 @@ public class NotificationService : INotificationService
 
         return new PagedNotificationResponseDto
         {
-            Items = paged.Items.Select(MapToResponse).ToList(),
+            Items = _mapper.Map<List<NotificationResponseDto>>(paged.Items),
             TotalCount = paged.TotalCount,
             UnreadCount = unreadCount,
             Page = paged.Page,
@@ -123,17 +127,4 @@ public class NotificationService : INotificationService
         await _uow.SaveChangesAsync(ct);
     }
 
-    private static NotificationResponseDto MapToResponse(Notification n) => new()
-    {
-        Id = n.Id,
-        UserId = n.UserId,
-        Type = n.Type,
-        Priority = n.Priority,
-        Title = n.Title,
-        Message = n.Message,
-        IsRead = n.IsRead,
-        RelatedEntityId = n.RelatedEntityId,
-        RelatedEntityType = n.RelatedEntityType,
-        CreatedAt = n.CreatedAt
-    };
 }

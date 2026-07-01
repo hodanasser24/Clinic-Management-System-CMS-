@@ -8,6 +8,8 @@ using DCMS.Domain.Enums;
 using DCMS.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
+using AutoMapper;
+
 namespace DCMS.Application.Services;
 
 public class OwnerService : IOwnerService
@@ -15,15 +17,18 @@ public class OwnerService : IOwnerService
     private readonly IUnitOfWork          _uow;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly INotificationService _notificationService;
+    private readonly IMapper              _mapper;
 
     public OwnerService(
         IUnitOfWork          uow,
         IPasswordHasher<User> passwordHasher,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IMapper              mapper)
     {
         _uow                 = uow;
         _passwordHasher      = passwordHasher;
         _notificationService = notificationService;
+        _mapper              = mapper;
     }
 
     // ── Account Creation ──────────────────────────────────────────────────────
@@ -59,7 +64,7 @@ public class OwnerService : IOwnerService
             "Your doctor account has been created. Please change your temporary password on first login.",
             doctor.Id, "Doctor", ct);
 
-        return MapToDoctorResponse(doctor);
+        return _mapper.Map<DoctorAccountResponseDto>(doctor);
     }
 
     public async Task<AccountResponseDto> CreateAdminAccountAsync(
@@ -89,7 +94,7 @@ public class OwnerService : IOwnerService
             "Your admin account has been created. Please change your temporary password on first login.",
             admin.Id, "Admin", ct);
 
-        return MapToAccountResponse(admin);
+        return _mapper.Map<AccountResponseDto>(admin);
     }
 
     // ── Account Activation / Deactivation ─────────────────────────────────────
@@ -115,7 +120,7 @@ public class OwnerService : IOwnerService
             "Your account has been deactivated. Contact the clinic owner for more information.",
             user.Id, "User", ct);
 
-        return MapToAccountResponse(user);
+        return _mapper.Map<AccountResponseDto>(user);
     }
 
     public async Task<AccountResponseDto> ReactivateAccountAsync(
@@ -135,7 +140,7 @@ public class OwnerService : IOwnerService
             "Account Reactivated", "Your account has been reactivated. You may now log in.",
             user.Id, "User", ct);
 
-        return MapToAccountResponse(user);
+        return _mapper.Map<AccountResponseDto>(user);
     }
 
     // ── Listing ───────────────────────────────────────────────────────────────
@@ -146,7 +151,7 @@ public class OwnerService : IOwnerService
         var paged = await _uow.Doctors.GetPagedAsync(page, pageSize, ct: ct);
         return new PagedResultDto<DoctorAccountResponseDto>
         {
-            Items      = paged.Items.Select(MapToDoctorResponse).ToList(),
+            Items      = _mapper.Map<List<DoctorAccountResponseDto>>(paged.Items),
             TotalCount = paged.TotalCount,
             Page       = paged.Page,
             PageSize   = paged.PageSize
@@ -159,7 +164,7 @@ public class OwnerService : IOwnerService
         var paged = await _uow.Admins.GetPagedAsync(page, pageSize, ct: ct);
         return new PagedResultDto<AccountResponseDto>
         {
-            Items      = paged.Items.Select(MapToAccountResponse).ToList(),
+            Items      = _mapper.Map<List<AccountResponseDto>>(paged.Items),
             TotalCount = paged.TotalCount,
             Page       = paged.Page,
             PageSize   = paged.PageSize
@@ -182,7 +187,7 @@ public class OwnerService : IOwnerService
         doctor.ExperienceYears = dto.ExperienceYears;
 
         await _uow.SaveChangesAsync(ct);
-        return MapToDoctorResponse(doctor);
+        return _mapper.Map<DoctorAccountResponseDto>(doctor);
     }
 
     public async Task<DoctorAccountResponseDto> UpdateDoctorPhotoAsync(
@@ -193,7 +198,7 @@ public class OwnerService : IOwnerService
 
         doctor.PhotoUrl = dto.PhotoUrl;
         await _uow.SaveChangesAsync(ct);
-        return MapToDoctorResponse(doctor);
+        return _mapper.Map<DoctorAccountResponseDto>(doctor);
     }
 
     // ── Offer Management (BR-58) ──────────────────────────────────────────────
@@ -204,7 +209,7 @@ public class OwnerService : IOwnerService
         var paged = await _uow.OfferDiscounts.GetPagedAsync(page, pageSize, ct: ct);
         return new PagedResultDto<OfferStatusResponseDto>
         {
-            Items      = paged.Items.Select(MapToOfferResponse).ToList(),
+            Items      = _mapper.Map<List<OfferStatusResponseDto>>(paged.Items),
             TotalCount = paged.TotalCount,
             Page       = paged.Page,
             PageSize   = paged.PageSize
@@ -231,7 +236,7 @@ public class OwnerService : IOwnerService
             "New Offer Available", $"A new offer '{offer.Title}' is now active!",
             offer.Id, "OfferDiscount", ct);
 
-        return MapToOfferResponse(offer);
+        return _mapper.Map<OfferStatusResponseDto>(offer);
     }
 
     public async Task<OfferStatusResponseDto> DeactivateOfferAsync(
@@ -245,7 +250,7 @@ public class OwnerService : IOwnerService
 
         offer.IsActive = false;
         await _uow.SaveChangesAsync(ct);
-        return MapToOfferResponse(offer);
+        return _mapper.Map<OfferStatusResponseDto>(offer);
     }
 
     // ── Schedule Change Request Approvals (BR-6) ──────────────────────────────
@@ -263,7 +268,7 @@ public class OwnerService : IOwnerService
 
         return new PagedResultDto<ScheduleChangeRequestResponseDto>
         {
-            Items      = paged.Items.Select(MapToScr).ToList(),
+            Items      = _mapper.Map<List<ScheduleChangeRequestResponseDto>>(paged.Items),
             TotalCount = paged.TotalCount,
             Page       = paged.Page,
             PageSize   = paged.PageSize
@@ -317,7 +322,7 @@ public class OwnerService : IOwnerService
             "Your schedule change request has been approved and applied.",
             request.Id, "ScheduleChangeRequest", ct);
 
-        return MapToScr(request);
+        return _mapper.Map<ScheduleChangeRequestResponseDto>(request);
     }
 
     public async Task<ScheduleChangeRequestResponseDto> RejectScheduleRequestAsync(
@@ -345,7 +350,7 @@ public class OwnerService : IOwnerService
                 : "Your schedule change request was rejected by the Owner.",
             request.Id, "ScheduleChangeRequest", ct);
 
-        return MapToScr(request);
+        return _mapper.Map<ScheduleChangeRequestResponseDto>(request);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -359,69 +364,4 @@ public class OwnerService : IOwnerService
         return await _uow.Admins.GetByIdAsync(userId, ct);
     }
 
-    private static ScheduleChangeRequestResponseDto MapToScr(ScheduleChangeRequest r) => new()
-    {
-        Id                             = r.Id,
-        RequestingDoctorId             = r.RequestingDoctorId,
-        RequestingDoctorName           = r.RequestingDoctor?.FullName ?? string.Empty,
-        ScheduleId                     = r.ScheduleId,
-        OldDayOfWeek                   = r.OldDayOfWeek,
-        OldStartTime                   = r.OldStartTime,
-        OldEndTime                     = r.OldEndTime,
-        OldSessionDurationMinutes      = r.OldSessionDurationMinutes,
-        ProposedDayOfWeek              = r.ProposedDayOfWeek,
-        ProposedStartTime              = r.ProposedStartTime,
-        ProposedEndTime                = r.ProposedEndTime,
-        ProposedSessionDurationMinutes = r.ProposedSessionDurationMinutes,
-        Reason                         = r.Reason,
-        RejectionReason                = r.RejectionReason,
-        DoctorApproved                 = r.DoctorApproved,
-        OwnerApproved                  = r.OwnerApproved,
-        Status                         = r.Status,
-        ExpiresAt                      = r.ExpiresAt,
-        CreatedAt                      = r.CreatedAt,
-        UpdatedAt                      = r.UpdatedAt
-    };
-
-    private static DoctorAccountResponseDto MapToDoctorResponse(Doctor d) => new()
-    {
-        Id              = d.Id,
-        FullName        = d.FullName,
-        Email           = d.Email,
-        Phone           = d.Phone,
-        Role            = d.Role,
-        IsActive        = d.IsActive,
-        IsFirstLogin    = d.IsFirstLogin,
-        Specialization  = d.Specialization,
-        Qualification   = d.Qualification,
-        Bio             = d.Bio,
-        PhotoUrl        = d.PhotoUrl,
-        ExperienceYears = d.ExperienceYears,
-        CreatedAt       = d.CreatedAt,
-        UpdatedAt       = d.UpdatedAt
-    };
-
-    private static AccountResponseDto MapToAccountResponse(User u) => new()
-    {
-        Id           = u.Id,
-        FullName     = u.FullName,
-        Email        = u.Email,
-        Phone        = u.Phone,
-        Role         = u.Role,
-        IsActive     = u.IsActive,
-        IsFirstLogin = u.IsFirstLogin,
-        CreatedAt    = u.CreatedAt,
-        UpdatedAt    = u.UpdatedAt
-    };
-
-    private static OfferStatusResponseDto MapToOfferResponse(OfferDiscount o) => new()
-    {
-        Id                 = o.Id,
-        Title              = o.Title,
-        IsActive           = o.IsActive,
-        StartDate          = o.StartDate,
-        EndDate            = o.EndDate,
-        BranchName         = o.Branch?.Name ?? string.Empty,
-        DiscountPercentage = o.DiscountPercentage
-    };
 }

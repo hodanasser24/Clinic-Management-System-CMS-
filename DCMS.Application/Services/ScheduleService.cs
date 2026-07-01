@@ -6,24 +6,28 @@ using DCMS.Domain.Entities;
 using DCMS.Domain.Enums;
 using DCMS.Domain.Interfaces;
 
+using AutoMapper;
+
 namespace DCMS.Application.Services;
 
 public class ScheduleService : IScheduleService
 {
     private readonly IUnitOfWork          _uow;
     private readonly INotificationService _notificationService;
+    private readonly IMapper              _mapper;
 
-    public ScheduleService(IUnitOfWork uow, INotificationService notificationService)
+    public ScheduleService(IUnitOfWork uow, INotificationService notificationService, IMapper mapper)
     {
         _uow                 = uow;
         _notificationService = notificationService;
+        _mapper              = mapper;
     }
 
     public async Task<ScheduleResponseDto> GetByIdAsync(int id, CancellationToken ct = default)
     {
         var schedule = await _uow.Schedules.GetByIdAsync(id, ct)
             ?? throw new NotFoundException($"Schedule {id} not found.");
-        return MapToResponse(schedule);
+        return _mapper.Map<ScheduleResponseDto>(schedule);
     }
 
     public async Task<PagedResultDto<ScheduleResponseDto>> GetByDoctorAsync(
@@ -32,7 +36,7 @@ public class ScheduleService : IScheduleService
         var paged = await _uow.Schedules.GetByDoctorAsync(doctorId, page, pageSize, ct);
         return new PagedResultDto<ScheduleResponseDto>
         {
-            Items      = paged.Items.Select(MapToResponse).ToList(),
+            Items      = _mapper.Map<List<ScheduleResponseDto>>(paged.Items),
             TotalCount = paged.TotalCount,
             Page       = paged.Page,
             PageSize   = paged.PageSize
@@ -45,7 +49,7 @@ public class ScheduleService : IScheduleService
         var paged = await _uow.Schedules.GetByBranchAsync(branchId, page, pageSize, ct);
         return new PagedResultDto<ScheduleResponseDto>
         {
-            Items      = paged.Items.Select(MapToResponse).ToList(),
+            Items      = _mapper.Map<List<ScheduleResponseDto>>(paged.Items),
             TotalCount = paged.TotalCount,
             Page       = paged.Page,
             PageSize   = paged.PageSize
@@ -111,7 +115,7 @@ public class ScheduleService : IScheduleService
 
         await _uow.Schedules.AddAsync(schedule, ct);
         await _uow.SaveChangesAsync(ct);
-        return MapToResponse(schedule);
+        return _mapper.Map<ScheduleResponseDto>(schedule);
     }
 
     public async Task<ScheduleResponseDto> UpdateAsync(
@@ -126,7 +130,7 @@ public class ScheduleService : IScheduleService
         schedule.IsActive               = dto.IsActive;
 
         await _uow.SaveChangesAsync(ct);
-        return MapToResponse(schedule);
+        return _mapper.Map<ScheduleResponseDto>(schedule);
     }
 
     public async Task<ScheduleChangeRequestResponseDto> SubmitChangeRequestAsync(
@@ -180,7 +184,7 @@ public class ScheduleService : IScheduleService
             "A schedule change request awaits your approval.",
             request.Id, "ScheduleChangeRequest", ct);
 
-        return MapToChangeRequestResponse(request);
+        return _mapper.Map<ScheduleChangeRequestResponseDto>(request);
     }
 
     // ── Doctor approval ────────────────────────────────────────────────────────
@@ -205,7 +209,7 @@ public class ScheduleService : IScheduleService
         await TryFinalizeAsync(request, ct);
         await _uow.SaveChangesAsync(ct);
 
-        return MapToChangeRequestResponse(request);
+        return _mapper.Map<ScheduleChangeRequestResponseDto>(request);
     }
 
     // ── Owner approval ─────────────────────────────────────────────────────────
@@ -227,7 +231,7 @@ public class ScheduleService : IScheduleService
         await TryFinalizeAsync(request, ct);
         await _uow.SaveChangesAsync(ct);
 
-        return MapToChangeRequestResponse(request);
+        return _mapper.Map<ScheduleChangeRequestResponseDto>(request);
     }
 
     // ── BR-49: Either Doctor OR Owner can unilaterally reject ─────────────────
@@ -260,7 +264,7 @@ public class ScheduleService : IScheduleService
             $"Schedule change request #{request.Id} was rejected.",
             request.Id, "ScheduleChangeRequest", ct);
 
-        return MapToChangeRequestResponse(request);
+        return _mapper.Map<ScheduleChangeRequestResponseDto>(request);
     }
 
     // ── Finalization (BR-6): needs BOTH approvals ──────────────────────────────
@@ -300,45 +304,4 @@ public class ScheduleService : IScheduleService
 
     // ── Mapping ────────────────────────────────────────────────────────────────
 
-    private static ScheduleResponseDto MapToResponse(Schedule s) => new()
-    {
-        Id                    = s.Id,
-        DoctorId              = s.DoctorId,
-        DoctorName            = s.Doctor?.FullName ?? string.Empty,
-        BranchId              = s.BranchId,
-        BranchName            = s.Branch?.Name     ?? string.Empty,
-        DayOfWeek             = s.DayOfWeek,
-        StartTime             = s.StartTime,
-        EndTime               = s.EndTime,
-        SessionDurationMinutes = s.SessionDurationMinutes,
-        BreakDurationMinutes  = s.BreakDurationMinutes,
-        IsActive              = s.IsActive,
-        CreatedAt             = s.CreatedAt,
-        UpdatedAt             = s.UpdatedAt
-    };
-
-    private static ScheduleChangeRequestResponseDto MapToChangeRequestResponse(
-        ScheduleChangeRequest r) => new()
-    {
-        Id                             = r.Id,
-        RequestingDoctorId             = r.RequestingDoctorId,
-        RequestingDoctorName           = r.RequestingDoctor?.FullName ?? string.Empty,
-        ScheduleId                     = r.ScheduleId,
-        OldDayOfWeek                   = r.OldDayOfWeek,
-        OldStartTime                   = r.OldStartTime,
-        OldEndTime                     = r.OldEndTime,
-        OldSessionDurationMinutes      = r.OldSessionDurationMinutes,
-        ProposedDayOfWeek              = r.ProposedDayOfWeek,
-        ProposedStartTime              = r.ProposedStartTime,
-        ProposedEndTime                = r.ProposedEndTime,
-        ProposedSessionDurationMinutes = r.ProposedSessionDurationMinutes,
-        Reason                         = r.Reason,
-        RejectionReason                = r.RejectionReason,
-        DoctorApproved                 = r.DoctorApproved,
-        OwnerApproved                  = r.OwnerApproved,
-        Status                         = r.Status,
-        ExpiresAt                      = r.ExpiresAt,
-        CreatedAt                      = r.CreatedAt,
-        UpdatedAt                      = r.UpdatedAt
-    };
 }
