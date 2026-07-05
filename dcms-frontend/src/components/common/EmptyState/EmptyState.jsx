@@ -1,0 +1,16 @@
+import "./EmptyState.css";
+
+function EmptyState({
+  title = "No Data Found",
+  message = "Try changing your search or filters.",
+}) {
+  return (
+    <div className="empty-state">
+      <div className="empty-icon">📭</div>
+      <h3>{title}</h3>
+      <p>{message}</p>
+    </div>
+  );
+}
+
+export default EmptyState;

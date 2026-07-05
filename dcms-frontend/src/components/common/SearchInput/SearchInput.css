@@ -1,0 +1,33 @@
+.search-input {
+  height: 52px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-input input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: white;
+  font-size: 15px;
+}
+
+.search-input input::placeholder {
+  color: #94a3b8;
+}
+
+.search-input button {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 16px;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2f6bff, #6d3df5);
+}

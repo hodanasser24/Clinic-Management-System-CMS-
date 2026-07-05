@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Button from "../../components/common/Button";
+import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
 import "./Register.css";
 

@@ -1,4 +1,4 @@
-import Button from "../common/Button";
+import Button from "../common/Button/Button";
 import Input from "../common/Input";
 import "./LoginForm.css";
 
