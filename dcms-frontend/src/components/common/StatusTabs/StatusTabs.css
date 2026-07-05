@@ -1,0 +1,21 @@
+.status-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-tabs button {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.75);
+  color: #cbd5e1;
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.status-tabs button.active,
+.status-tabs button:hover {
+  color: white;
+  background: linear-gradient(135deg, #2f6bff, #6d3df5);
+}
