@@ -1,0 +1,17 @@
+.notifications-page {
+  padding: 30px;
+  color: white;
+}
+
+.notifications-list {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notification-card {
+  background: #172036;
+  padding: 20px;
+  border-radius: 16px;
+}

@@ -1,0 +1,47 @@
+.notifications-page {
+  padding: 30px;
+  color: white;
+}
+
+.notification-list {
+  display: grid;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+.notification-card {
+  padding: 22px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.notification-card h3 {
+  margin-bottom: 10px;
+}
+
+.notification-card p {
+  color: #cbd5e1;
+}
+
+.notification-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.notification-footer button {
+  margin-left: 10px;
+  border: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  color: white;
+  background: #3b82f6;
+}
+
+.notification-footer .danger {
+  background: #ef4444;
+}

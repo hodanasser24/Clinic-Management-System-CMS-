@@ -1,0 +1,89 @@
+.doctor-details-page {
+  padding: 30px;
+  color: white;
+}
+
+.doctor-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.doctor-details-header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.doctor-details-header button,
+.doctor-actions button {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2f6bff, #6d3df5);
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.details-card {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.details-card h2 {
+  color: #60a5fa;
+  margin-bottom: 14px;
+}
+
+.details-card p {
+  color: #cbd5e1;
+  margin: 8px 0;
+}
+
+.details-card strong {
+  color: white;
+}
+
+.details-card textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.9);
+  color: white;
+  padding: 14px;
+  outline: none;
+  resize: vertical;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.status-badge.pending {
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.14);
+}
+
+.doctor-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.doctor-actions .danger {
+  background: #ef4444;
+}

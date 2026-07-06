@@ -1,0 +1,43 @@
+.patients-page {
+  padding: 30px;
+}
+
+.patients-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 26px;
+  gap: 20px;
+}
+
+.patients-header h1 {
+  color: white;
+  font-size: 30px;
+}
+
+.patients-header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.add-patient-btn {
+  border: 0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2f6bff, #6d3df5);
+}
+
+.patients-toolbar {
+  display: flex;
+  gap: 20px;
+  align-items: end;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.patients-page .data-table-wrapper {
+  margin-top: 20px;
+}

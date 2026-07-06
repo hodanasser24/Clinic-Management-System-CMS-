@@ -10,57 +10,60 @@ function Patients() {
   const navigate = useNavigate();
 
   const columns = [
-    { key: "id", label: "ID" },
     { key: "name", label: "Patient" },
-    { key: "phone", label: "Phone" },
-    { key: "gender", label: "Gender" },
     { key: "age", label: "Age" },
+    { key: "phone", label: "Phone" },
+    { key: "lastVisit", label: "Last Visit" },
+    { key: "status", label: "Status" },
   ];
 
   const data = [
     {
       id: 1,
       name: "Ahmed Ali",
-      phone: "01012345678",
-      gender: "Male",
       age: 24,
+      phone: "01012345678",
+      lastVisit: "05 Jul 2026",
+      status: "Active",
     },
     {
       id: 2,
       name: "Mona Hassan",
-      phone: "01098765432",
-      gender: "Female",
       age: 29,
+      phone: "01098765432",
+      lastVisit: "04 Jul 2026",
+      status: "Follow Up",
+    },
+    {
+      id: 3,
+      name: "Omar Mohamed",
+      age: 31,
+      phone: "01055555555",
+      lastVisit: "02 Jul 2026",
+      status: "Active",
     },
   ];
 
   return (
-    <div className="patients-page">
-      <div className="patients-header">
+    <div className="doctor-patients-page">
+      <div className="doctor-patients-header">
         <div>
-          <h1>Patients</h1>
-          <p>Manage all registered patients.</p>
+          <h1>Doctor Patients</h1>
+          <p>Review patients assigned to your appointments.</p>
         </div>
-
-        <button
-          className="add-patient-btn"
-          onClick={() => alert("Add Patient will be connected later")}
-        >
-          + Add Patient
-        </button>
       </div>
 
-      <div className="patients-toolbar">
+      <div className="doctor-patients-toolbar">
         <SearchInput placeholder="Search patient..." />
 
         <FilterDropdown
-          label="Gender"
+          label="Status"
           value=""
           onChange={() => {}}
           options={[
-            { value: "", label: "All" },
-            { value: "Male", label: "Male" },
-            { value: "Female", label: "Female" },
+            { value: "", label: "All Status" },
+            { value: "active", label: "Active" },
+            { value: "followup", label: "Follow Up" },
           ]}
         />
 
@@ -68,8 +71,9 @@ function Patients() {
           value=""
           onChange={() => {}}
           options={[
-            { value: "newest", label: "Newest" },
-            { value: "oldest", label: "Oldest" },
+            { value: "newest", label: "Newest Visit" },
+            { value: "oldest", label: "Oldest Visit" },
+            { value: "az", label: "Name A-Z" },
           ]}
         />
       </div>
@@ -78,14 +82,18 @@ function Patients() {
         columns={columns}
         data={data}
         actions={(row) => (
-          <div className="table-actions">
-            <button onClick={() => navigate(`/moderator/patients/${row.id}`)}>
+          <div className="doctor-patient-actions">
+            <button onClick={() => navigate(`/doctor/patients/${row.id}`)}>
               View
             </button>
 
-            <button>Edit</button>
+            <button onClick={() => navigate("/doctor/medical-records")}>
+              Records
+            </button>
 
-            <button className="danger">Delete</button>
+            <button onClick={() => navigate("/doctor/prescriptions")}>
+              Prescription
+            </button>
           </div>
         )}
       />
