@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { registerPatient } from "../../services/authServices";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
 import "./Register.css";
 
 function Register() {
+  const navigate = useNavigate();
   const [isDark, setIsDark] = useState(true);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -13,6 +16,7 @@ function Register() {
     dateOfBirth: "",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isDark) document.body.classList.add("dark");
@@ -24,7 +28,7 @@ function Register() {
     setFormData({ ...formData, [name]: value });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setError("");
 
@@ -39,8 +43,16 @@ function Register() {
       return;
     }
 
-    console.log("Ready for backend register API:", formData);
-    setError("Backend API is not connected yet.");
+    setLoading(true);
+
+    try {
+      await registerPatient(formData);
+      navigate("/login");
+    } catch (err) {
+      setError(err.message || "Failed to register.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -100,7 +112,9 @@ function Register() {
             onChange={handleChange}
           />
 
-          <Button type="submit">Create Account →</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creating Account..." : "Create Account →"}
+          </Button>
 
           <p className="auth-switch">
             Already have an account? <a href="/login">Sign in</a>

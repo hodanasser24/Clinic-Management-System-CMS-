@@ -17,6 +17,12 @@ import ResetPassword from "../pages/auth/ResetPassword";
 
 // Patient
 import PatientDashboard from "../pages/patient/PatientDashboard";
+import PatientAppointments from "../pages/patient/Appointments/Appointments";
+import PatientBookAppointment from "../pages/patient/BookAppointment/BookAppointment";
+import PatientAppointmentDetails from "../pages/patient/AppointmentDetails/AppointmentDetails";
+import PatientProfile from "../pages/patient/Profile/PatientProfile";
+import PatientNotifications from "../pages/patient/Notifications/PatientNotifications";
+import PatientDentalChart from "../pages/patient/DentalChart/PatientDentalChart";
 
 // Moderator
 import ModeratorDashboard from "../pages/moderator/Dashboard/Dashboard";
@@ -54,6 +60,60 @@ function AppRoutes() {
           element={
             <DashboardLayout>
               <PatientDashboard />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/patient/appointments"
+          element={
+            <DashboardLayout>
+              <PatientAppointments />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/patient/appointments/book"
+          element={
+            <DashboardLayout>
+              <PatientBookAppointment />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/patient/appointments/:id"
+          element={
+            <DashboardLayout>
+              <PatientAppointmentDetails />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/patient/profile"
+          element={
+            <DashboardLayout>
+              <PatientProfile />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/patient/notifications"
+          element={
+            <DashboardLayout>
+              <PatientNotifications />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/patient/dental-chart"
+          element={
+            <DashboardLayout>
+              <PatientDentalChart />
             </DashboardLayout>
           }
         />

@@ -1,21 +1,25 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { resetPassword } from "../../services/authServices";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
 import "./Login.css";
 
 function ResetPassword() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     token: "",
     newPassword: "",
   });
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   function handleChange(e) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     if (!formData.email || !formData.token || !formData.newPassword) {
@@ -23,8 +27,16 @@ function ResetPassword() {
       return;
     }
 
-    setMessage("Ready for backend reset password API.");
-    console.log(formData);
+    setLoading(true);
+
+    try {
+      await resetPassword(formData);
+      navigate("/login");
+    } catch (err) {
+      setMessage(err.message || "Failed to reset password.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -67,7 +79,9 @@ function ResetPassword() {
             onChange={handleChange}
           />
 
-          <Button type="submit">Reset Password →</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Resetting..." : "Reset Password →"}
+          </Button>
 
           <p className="auth-switch">
             Back to <a href="/login">Login</a>

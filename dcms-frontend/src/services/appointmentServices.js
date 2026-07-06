@@ -1,0 +1,84 @@
+import { getAuthToken } from "./authServices";
+
+const API_BASE_URL = "http://localhost:5118/api";
+
+async function fetchWithAuth(url, options = {}) {
+  const token = getAuthToken();
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+  }
+
+  // Handle empty responses (like 204 No Content or empty 200)
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
+export async function getPatientAppointments(patientId, params = {}) {
+  const query = new URLSearchParams();
+  
+  if (params.page) query.append("page", params.page);
+  if (params.pageSize) query.append("pageSize", params.pageSize);
+  if (params.status) query.append("status", params.status);
+  if (params.sortBy) query.append("sortBy", params.sortBy);
+  // Defaulting to newest first based on the requirements
+  query.append("sortDescending", "true");
+
+  const queryString = query.toString() ? `?${query.toString()}` : "";
+  return fetchWithAuth(`/Appointment/by-patient/${patientId}${queryString}`);
+}
+
+export async function getAppointmentById(id) {
+  return fetchWithAuth(`/Appointment/${id}`);
+}
+
+export async function cancelAppointment(id, reason) {
+  return fetchWithAuth(`/Appointment/${id}/cancel`, {
+    method: "PUT",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export async function bookAppointment(data) {
+  return fetchWithAuth("/Appointment", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getUpcomingPatientAppointments(patientId, params = {}) {
+  const query = new URLSearchParams();
+  if (params.page) query.append("page", params.page);
+  if (params.pageSize) query.append("pageSize", params.pageSize);
+  const queryString = query.toString() ? `?${query.toString()}` : "";
+  return fetchWithAuth(`/Appointment/upcoming/by-patient/${patientId}${queryString}`);
+}
+
+export async function getHistoryPatientAppointments(patientId, params = {}) {
+  const query = new URLSearchParams();
+  if (params.page) query.append("page", params.page);
+  if (params.pageSize) query.append("pageSize", params.pageSize);
+  const queryString = query.toString() ? `?${query.toString()}` : "";
+  return fetchWithAuth(`/Appointment/history/by-patient/${patientId}${queryString}`);
+}
+
+export async function rescheduleAppointment(id, data) {
+  return fetchWithAuth(`/Appointment/${id}/reschedule`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}

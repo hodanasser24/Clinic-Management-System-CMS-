@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { forgotPassword } from "../../services/authServices";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
 import "./Login.css";
@@ -6,8 +7,9 @@ import "./Login.css";
 function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     if (!email || !email.includes("@")) {
@@ -15,8 +17,16 @@ function ForgotPassword() {
       return;
     }
 
-    setMessage("Ready for backend forgot password API.");
-    console.log({ email });
+    setLoading(true);
+    
+    try {
+      await forgotPassword({ email });
+      setMessage("Reset token sent! Check your email.");
+    } catch (err) {
+      setMessage(err.message || "Failed to send reset token.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -46,7 +56,9 @@ function ForgotPassword() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <Button type="submit">Send Reset Token →</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Sending..." : "Send Reset Token →"}
+          </Button>
 
           <p className="auth-switch">
             Remembered your password? <a href="/login">Sign in</a>

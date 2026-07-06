@@ -1,0 +1,7 @@
+@import "../../../pages/moderator/AppointmentDetails/AppointmentDetails.css";
+
+/* Reuse status badge from patient Appointments */
+@import "../Appointments/Appointments.css";
+
+/* Reuse time slots grid and submit button styles */
+@import "../BookAppointment/BookAppointment.css";

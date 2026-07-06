@@ -1,0 +1,178 @@
+.dental-chart-page {
+  padding: 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dental-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.dental-chart-header h1 {
+  font-size: 24px;
+  color: #f8fafc;
+  margin: 0 0 8px 0;
+}
+
+.dental-chart-header p {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 14px;
+}
+
+.dental-chart-content {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.chart-visual-container {
+  flex: 2;
+  min-width: 300px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.teeth-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.tooth-box {
+  width: 40px;
+  height: 50px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tooth-box:hover {
+  transform: translateY(-2px);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.tooth-box.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+/* Status Colors */
+.tooth-box[data-status="Healthy"] { border-bottom-color: #10b981; border-bottom-width: 4px; }
+.tooth-box[data-status="Decayed"] { border-bottom-color: #ef4444; border-bottom-width: 4px; }
+.tooth-box[data-status="Filled"] { border-bottom-color: #3b82f6; border-bottom-width: 4px; }
+.tooth-box[data-status="Missing"] { opacity: 0.4; border-bottom-color: #64748b; border-bottom-width: 4px; }
+.tooth-box[data-status="RootCanalTreated"] { border-bottom-color: #8b5cf6; border-bottom-width: 4px; }
+.tooth-box[data-status="CrownPlaced"] { border-bottom-color: #f59e0b; border-bottom-width: 4px; }
+.tooth-box[data-status="NeedsExtraction"] { border-bottom-color: #dc2626; border-bottom-width: 4px; }
+.tooth-box[data-status="UnderObservation"] { border-bottom-color: #eab308; border-bottom-width: 4px; }
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.details-panel {
+  flex: 1;
+  min-width: 300px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  position: sticky;
+  top: 20px;
+}
+
+.details-panel h3 {
+  margin: 0 0 16px 0;
+  color: #f8fafc;
+  font-size: 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  padding-bottom: 12px;
+}
+
+.detail-row {
+  margin-bottom: 16px;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 15px;
+  color: #e2e8f0;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.placeholder-text {
+  color: #64748b;
+  text-align: center;
+  padding: 40px 20px;
+  font-style: italic;
+}
+
+.general-notes {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 0;
+}
+
+.general-notes h3 {
+  margin: 0 0 12px 0;
+  color: #f8fafc;
+  font-size: 16px;
+}
+
+.general-notes p {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}

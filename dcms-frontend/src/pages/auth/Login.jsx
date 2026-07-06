@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { login } from "../../services/authServices";
 import LoginForm from "../../components/forms/LoginForm";
 import "./Login.css";
 
 function Login() {
+  const navigate = useNavigate();
   const [isDark, setIsDark] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,7 +17,7 @@ function Login() {
     else document.body.classList.remove("dark");
   }, [isDark]);
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
     setError("");
 
@@ -30,11 +33,20 @@ function Login() {
 
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await login({ email, password });
+      
+      // Role 0 is Patient in the UserRole enum, or "Patient" if serialized as string
+      if (response.role === 0 || response.role === "Patient") {
+        navigate("/patient/dashboard");
+      } else {
+        navigate("/moderator/dashboard");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to login.");
+    } finally {
       setLoading(false);
-      setError("Backend API is not connected yet.");
-      console.log("Ready for backend:", { email, password });
-    }, 700);
+    }
   }
 
   return (

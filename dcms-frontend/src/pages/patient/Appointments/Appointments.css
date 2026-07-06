@@ -1,0 +1,67 @@
+@import "../../../pages/moderator/Appointments/Appointments.css";
+
+/* Patient Specific or Missing Styles */
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.table-actions button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.6);
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.table-actions button:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.table-actions button.danger {
+  color: #ef4444;
+}
+
+.table-actions button.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+}
+
+.status-badge.confirmed {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+}
+
+.status-badge.completed {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+
+.status-badge.cancelled,
+.status-badge.rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.status-badge.rescheduled {
+  background: rgba(168, 85, 247, 0.15);
+  color: #d8b4fe;
+}
