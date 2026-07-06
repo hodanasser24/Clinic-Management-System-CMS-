@@ -1,0 +1,38 @@
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.login-options label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.login-options a,
+.auth-switch a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.auth-error {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.auth-switch {
+  text-align: center;
+  color: var(--muted);
+}

@@ -1,0 +1,19 @@
+.dashboard-layout {
+  min-height: 100vh;
+  display: flex;
+  background: #050b18;
+  color: white;
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: 28px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(109, 61, 245, 0.18),
+      transparent 35%
+    ),
+    #050b18;
+  overflow-y: auto;
+}

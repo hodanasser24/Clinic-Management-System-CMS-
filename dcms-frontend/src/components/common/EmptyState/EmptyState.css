@@ -1,0 +1,21 @@
+.empty-state {
+  padding: 40px;
+  border-radius: 18px;
+  text-align: center;
+  color: white;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.empty-icon {
+  font-size: 38px;
+  margin-bottom: 12px;
+}
+
+.empty-state h3 {
+  margin: 0;
+}
+
+.empty-state p {
+  color: #94a3b8;
+}
