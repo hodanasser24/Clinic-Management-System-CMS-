@@ -1,0 +1,81 @@
+.appointment-form-page {
+  padding: 30px;
+  color: white;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 26px;
+}
+
+.form-header h1 {
+  font-size: 30px;
+}
+
+.form-header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.form-header button,
+.form-actions button {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  background: rgba(59, 130, 246, 0.8);
+}
+
+.appointment-form {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 22px;
+  padding: 28px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.form-group {
+  display: grid;
+  gap: 8px;
+}
+
+.form-group label {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.9);
+  color: white;
+  padding: 14px;
+  outline: none;
+}
+
+.form-group.full {
+  margin-top: 20px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.form-actions .primary {
+  background: linear-gradient(135deg, #2f6bff, #6d3df5);
+}

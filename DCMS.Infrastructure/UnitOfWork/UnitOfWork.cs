@@ -29,6 +29,7 @@ public sealed class UnitOfWork : IUnitOfWork
     private readonly IDoctorRepository      _doctors;
     private readonly IAdminRepository       _admins;
     private readonly IGuestRepository       _guests;
+    private IGenericRepository<Owner>?             _owners;
     private readonly IAppointmentRepository _appointments;
     private readonly IScheduleRepository    _schedules;
     private readonly IReportRepository      _reports;
@@ -77,6 +78,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IDoctorRepository      Doctors      => _doctors;
     public IAdminRepository       Admins       => _admins;
     public IGuestRepository       Guests       => _guests;
+    public IGenericRepository<Owner> Owners      => _owners ??= new GenericRepository<Owner>(_context);
     public IAppointmentRepository Appointments => _appointments;
     public IScheduleRepository    Schedules    => _schedules;
     public IReportRepository      Reports      => _reports;

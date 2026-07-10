@@ -219,6 +219,8 @@ public class AuthService : IAuthService
         if (user != null) return user;
         user = await _uow.Doctors.GetByEmailAsync(email, ct);
         if (user != null) return user;
+        user = (await _uow.Owners.FindAsync(o => o.Email == email, ct)).FirstOrDefault();
+        if (user != null) return user;
         return await _uow.Admins.GetByEmailAsync(email, ct);
     }
 
@@ -227,6 +229,8 @@ public class AuthService : IAuthService
         User? user = await _uow.Patients.GetByIdAsync(userId, ct);
         if (user != null) return user;
         user = await _uow.Doctors.GetByIdAsync(userId, ct);
+        if (user != null) return user;
+        user = await _uow.Owners.GetByIdAsync(userId, ct);
         if (user != null) return user;
         return await _uow.Admins.GetByIdAsync(userId, ct);
     }

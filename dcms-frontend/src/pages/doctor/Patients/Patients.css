@@ -1,0 +1,53 @@
+.doctor-patients-page {
+  padding: 30px;
+  color: white;
+}
+
+.doctor-patients-header {
+  margin-bottom: 25px;
+}
+
+.doctor-patients-header h1 {
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.doctor-patients-header p {
+  margin-top: 6px;
+  color: #94a3b8;
+}
+
+.doctor-patients-toolbar {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.doctor-patient-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.doctor-patient-actions button {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: white;
+}
+
+.doctor-patient-actions button:nth-child(1) {
+  background: #2563eb;
+}
+
+.doctor-patient-actions button:nth-child(2) {
+  background: #0f766e;
+}
+
+.doctor-patient-actions button:nth-child(3) {
+  background: #7c3aed;
+}

@@ -15,6 +15,7 @@ public interface IGenericRepository<T> where T : class
     Task<T?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<IEnumerable<T>> GetAllAsync(CancellationToken ct = default);
     Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
+    Task<IEnumerable<T>> FindTrackedAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
 
     /// <summary>
     /// Paginated query with optional predicate filter.

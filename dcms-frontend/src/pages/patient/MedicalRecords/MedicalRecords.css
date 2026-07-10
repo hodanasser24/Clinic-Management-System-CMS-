@@ -1,0 +1,51 @@
+.patient-medical-page {
+  padding: 30px;
+  color: white;
+}
+
+.medical-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.medical-header p {
+  color: #94a3b8;
+}
+
+.medical-header button {
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+}
+
+.medical-card {
+  background: #172036;
+  padding: 22px;
+  border-radius: 18px;
+  margin-bottom: 20px;
+}
+
+.medical-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}

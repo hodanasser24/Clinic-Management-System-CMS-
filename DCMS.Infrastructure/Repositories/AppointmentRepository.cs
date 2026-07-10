@@ -71,6 +71,11 @@ public class AppointmentRepository : GenericRepository<Appointment>, IAppointmen
         => await WithDetails()
             .FirstOrDefaultAsync(a => a.Id == id, ct);
 
+    public async Task<Appointment?> GetByIdWithDetailsTrackedAsync(
+        int id, CancellationToken ct = default)
+        => await WithDetailsTracked()
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+
     public async Task<PagedResult<Appointment>> GetPagedWithDetailsAsync(
         int page, int pageSize,
         Expression<Func<Appointment, bool>>? predicate = null,
@@ -154,6 +159,15 @@ public class AppointmentRepository : GenericRepository<Appointment>, IAppointmen
             .Include(a => a.Service)
             .Include(a => a.ConfirmedByAdmin)
             .AsNoTracking();
+
+    /// <summary>Same as WithDetails() but without AsNoTracking — for mutation endpoints that need to save changes.</summary>
+    private IQueryable<Appointment> WithDetailsTracked()
+        => _dbSet
+            .Include(a => a.Patient)
+            .Include(a => a.Doctor)
+            .Include(a => a.Branch)
+            .Include(a => a.Service)
+            .Include(a => a.ConfirmedByAdmin);
 
     private static async Task<PagedResult<Appointment>> ToPagedAsync(
         IQueryable<Appointment> query, int page, int pageSize, CancellationToken ct)

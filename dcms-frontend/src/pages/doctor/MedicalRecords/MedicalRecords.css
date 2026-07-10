@@ -1,0 +1,72 @@
+.medical-page {
+  padding: 30px;
+  color: white;
+}
+
+.medical-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.medical-header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.medical-header button,
+.medical-actions button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  cursor: pointer;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+}
+
+.medical-card {
+  background: #172036;
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.medical-card h2 {
+  margin-bottom: 18px;
+}
+
+.medical-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.medical-card p {
+  color: #d1d5db;
+}
+
+.medical-card strong {
+  color: white;
+}
+
+.medical-card textarea {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  resize: none;
+  background: #0f172a;
+  color: white;
+}
+
+.medical-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.success {
+  background: #16a34a !important;
+}

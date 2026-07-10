@@ -1,6 +1,6 @@
 import "./Input.css";
 
-function Input({ label, type = "text", placeholder, value, onChange, name, ...rest }) {
+function Input({ label, type = "text", placeholder, value, onChange, name }) {
   return (
     <div className="input-group">
       <label>{label}</label>
@@ -10,7 +10,6 @@ function Input({ label, type = "text", placeholder, value, onChange, name, ...re
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        {...rest}
       />
     </div>
   );

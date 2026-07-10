@@ -1,25 +1,27 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { resetPassword } from "../../services/authServices";
+import { useEffect, useState } from "react";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
 import "./Login.css";
 
 function ResetPassword() {
-  const navigate = useNavigate();
+  const [isDark, setIsDark] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     token: "",
     newPassword: "",
   });
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isDark) document.body.classList.add("dark");
+    else document.body.classList.remove("dark");
+  }, [isDark]);
 
   function handleChange(e) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
 
     if (!formData.email || !formData.token || !formData.newPassword) {
@@ -27,16 +29,8 @@ function ResetPassword() {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      await resetPassword(formData);
-      navigate("/login");
-    } catch (err) {
-      setMessage(err.message || "Failed to reset password.");
-    } finally {
-      setLoading(false);
-    }
+    setMessage("Ready for backend reset password API.");
+    console.log(formData);
   }
 
   return (
@@ -79,14 +73,19 @@ function ResetPassword() {
             onChange={handleChange}
           />
 
-          <Button type="submit" disabled={loading}>
-            {loading ? "Resetting..." : "Reset Password →"}
-          </Button>
+          <Button type="submit">Reset Password →</Button>
 
           <p className="auth-switch">
             Back to <a href="/login">Login</a>
           </p>
         </form>
+
+        <button
+          className="theme-toggle-btn"
+          onClick={() => setIsDark((prev) => !prev)}
+        >
+          {isDark ? "☀️ Light Mode" : "🌙 Dark Mode"}
+        </button>
       </section>
 
       <section className="auth-hero">

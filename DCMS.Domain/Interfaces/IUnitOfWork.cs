@@ -17,12 +17,11 @@ namespace DCMS.Domain.Interfaces;
 public interface IUnitOfWork : IDisposable
 {
     // ── User hierarchy ─────────────────────────────────────────────────────
-    IPatientRepository  Patients  { get; }
-    IDoctorRepository   Doctors   { get; }
-    IAdminRepository    Admins    { get; }
-    IGuestRepository    Guests    { get; }
-    // Owner is accessed via Doctors (Owner : Doctor) — no separate repo needed
-    // Owner-specific navigation collections are queried through IDoctorRepository.
+    IPatientRepository              Patients  { get; }
+    IDoctorRepository               Doctors   { get; }
+    IAdminRepository                Admins    { get; }
+    IGuestRepository                Guests    { get; }
+    IGenericRepository<Owner>       Owners    { get; }
 
     // ── Core clinic operations ─────────────────────────────────────────────
     IAppointmentRepository                          Appointments                    { get; }

@@ -50,7 +50,7 @@ public class NotificationService : INotificationService
 
     public async Task MarkAllAsReadAsync(int userId, CancellationToken ct = default)
     {
-        var all = await _uow.Notifications.FindAsync(n => n.UserId == userId && !n.IsRead, ct);
+        var all = await _uow.Notifications.FindTrackedAsync(n => n.UserId == userId && !n.IsRead, ct);
         var now = DateTime.UtcNow;
         foreach (var n in all)
         {

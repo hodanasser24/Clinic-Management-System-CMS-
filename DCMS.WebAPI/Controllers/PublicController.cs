@@ -111,12 +111,25 @@ public class PublicController : ControllerBase
     [HttpGet("doctors/{doctorId:int}/available-slots")]
     public async Task<IActionResult> GetAvailableSlots(
         int doctorId,
-        [FromQuery] int branchId,
+        [FromQuery] int? branchId,
         [FromQuery] DateOnly date,
         [FromServices] IScheduleService scheduleService,
         CancellationToken ct)
     {
-        var schedule = await _uow.Schedules.GetByDoctorBranchDayAsync(doctorId, branchId, date.DayOfWeek, ct);
+        int actualBranchId;
+        if (!branchId.HasValue)
+        {
+            var branches = await _uow.Branches.FindAsync(b => b.IsActive, ct);
+            var first = branches.FirstOrDefault();
+            if (first == null) return NotFound("No active branches found.");
+            actualBranchId = first.Id;
+        }
+        else
+        {
+            actualBranchId = branchId.Value;
+        }
+
+        var schedule = await _uow.Schedules.GetByDoctorBranchDayAsync(doctorId, actualBranchId, date.DayOfWeek, ct);
         if (schedule == null) return Ok(Array.Empty<object>());
         var slots = await scheduleService.GetAvailableTimeSlotsAsync(schedule.Id, date, ct);
         return Ok(slots);

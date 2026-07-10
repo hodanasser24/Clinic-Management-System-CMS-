@@ -1,7 +1,78 @@
-@import "../../../pages/moderator/AppointmentDetails/AppointmentDetails.css";
+.patient-details-page {
+  padding: 30px;
+  color: white;
+}
 
-/* Reuse status badge from patient Appointments */
-@import "../Appointments/Appointments.css";
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
 
-/* Reuse time slots grid and submit button styles */
-@import "../BookAppointment/BookAppointment.css";
+.details-header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.details-header button,
+.details-actions button {
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.details-card {
+  background: #172036;
+  padding: 22px;
+  border-radius: 18px;
+  margin-bottom: 20px;
+}
+
+.details-card h2 {
+  margin-bottom: 16px;
+}
+
+.details-card p {
+  margin: 10px 0;
+  color: #d1d5db;
+}
+
+.details-card strong {
+  color: white;
+}
+
+.details-card textarea {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  background: #0f172a;
+  color: white;
+  resize: none;
+}
+
+.confirmed {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.details-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.danger {
+  background: #dc2626 !important;
+}

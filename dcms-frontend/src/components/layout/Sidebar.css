@@ -79,4 +79,169 @@
   color: white;
   font-weight: 800;
   background: linear-gradient(135deg, #2f6bff, #6d3df5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-footer button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(47, 107, 255, 0.3);
+}
+
+/* Support Helpdesk Modal Styles */
+.support-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(3, 7, 18, 0.72);
+  backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+}
+
+.support-modal-card {
+  background: rgba(13, 22, 41, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  width: 95%;
+  max-width: 440px;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  font-family: "Inter", sans-serif;
+}
+
+.support-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.support-modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+}
+
+.support-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+
+.support-close-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+}
+
+.support-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.support-info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.support-info-item span.icon {
+  font-size: 16px;
+}
+
+.support-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.support-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.support-form input,
+.support-form textarea {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: white;
+  padding: 12px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.support-form input:focus,
+.support-form textarea:focus {
+  border-color: #2f6bff;
+  outline: none;
+  box-shadow: 0 0 10px rgba(47, 107, 255, 0.25);
+}
+
+.support-submit-btn {
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #2f6bff, #6d3df5);
+  color: white;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.support-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(47, 107, 255, 0.35);
+}
+
+.support-success-msg {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.support-success-msg div.success-icon {
+  font-size: 44px;
+  margin-bottom: 12px;
+}
+
+.support-success-msg h4 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  color: #22c55e;
+}
+
+.support-success-msg p {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: 0;
 }

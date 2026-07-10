@@ -1,0 +1,30 @@
+.doctor-profile-page {
+  padding: 30px;
+  color: white;
+}
+
+.profile-card {
+  background: #172036;
+  padding: 24px;
+  border-radius: 18px;
+  margin-bottom: 20px;
+}
+
+.profile-card textarea {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  background: #0f172a;
+  color: white;
+}
+
+.save-profile {
+  border: none;
+  padding: 14px 24px;
+  border-radius: 12px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+}

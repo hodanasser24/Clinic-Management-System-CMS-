@@ -35,6 +35,9 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
         => await _dbSet.AsNoTracking().Where(predicate).ToListAsync(ct);
 
+    public async Task<IEnumerable<T>> FindTrackedAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
+        => await _dbSet.Where(predicate).ToListAsync(ct);
+
     public async Task<PagedResult<T>> GetPagedAsync(
         int page,
         int pageSize,

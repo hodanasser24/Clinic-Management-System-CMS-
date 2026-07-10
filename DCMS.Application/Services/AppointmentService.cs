@@ -149,7 +149,7 @@ public class AppointmentService : IAppointmentService
     public async Task<AppointmentResponseDto> RescheduleAsync(
         int id, int requestingUserId, RescheduleAppointmentRequestDto dto, CancellationToken ct = default)
     {
-        var a = await _uow.Appointments.GetByIdWithDetailsAsync(id, ct)
+        var a = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
             ?? throw new NotFoundException($"Appointment {id} not found.");
 
         if (a.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled or AppointmentStatus.Rejected)
@@ -189,7 +189,7 @@ public class AppointmentService : IAppointmentService
     public async Task<AppointmentResponseDto> ConfirmAsync(
         int id, ConfirmAppointmentRequestDto dto, CancellationToken ct = default)
     {
-        var a = await _uow.Appointments.GetByIdWithDetailsAsync(id, ct)
+        var a = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
             ?? throw new NotFoundException($"Appointment {id} not found.");
 
         if (a.Status != AppointmentStatus.Pending)
@@ -217,7 +217,7 @@ public class AppointmentService : IAppointmentService
     public async Task<AppointmentResponseDto> RejectAsync(
         int id, RejectAppointmentRequestDto dto, CancellationToken ct = default)
     {
-        var a = await _uow.Appointments.GetByIdWithDetailsAsync(id, ct)
+        var a = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
             ?? throw new NotFoundException($"Appointment {id} not found.");
 
         if (a.Status != AppointmentStatus.Pending)
@@ -240,7 +240,7 @@ public class AppointmentService : IAppointmentService
     public async Task<AppointmentResponseDto> CancelAsync(
         int id, int requestingUserId, CancelAppointmentRequestDto dto, CancellationToken ct = default)
     {
-        var a = await _uow.Appointments.GetByIdWithDetailsAsync(id, ct)
+        var a = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
             ?? throw new NotFoundException($"Appointment {id} not found.");
 
         if (a.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled)
@@ -268,7 +268,7 @@ public class AppointmentService : IAppointmentService
     public async Task<AppointmentResponseDto> MarkUrgentAsync(
         int id, MarkUrgentRequestDto dto, CancellationToken ct = default)
     {
-        var a = await _uow.Appointments.GetByIdWithDetailsAsync(id, ct)
+        var a = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
             ?? throw new NotFoundException($"Appointment {id} not found.");
 
         if (a.DoctorId != dto.DoctorId)
@@ -300,7 +300,7 @@ public class AppointmentService : IAppointmentService
     public async Task<AppointmentResponseDto> UnmarkUrgentAsync(
         int id, int requestingDoctorId, CancellationToken ct = default)
     {
-        var a = await _uow.Appointments.GetByIdWithDetailsAsync(id, ct)
+        var a = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
             ?? throw new NotFoundException($"Appointment {id} not found.");
 
         // BR-56: only the doctor who marked it can unmark
@@ -319,7 +319,7 @@ public class AppointmentService : IAppointmentService
     public async Task<AppointmentResponseDto> MarkAttendanceAsync(
         int id, MarkAttendanceRequestDto dto, CancellationToken ct = default)
     {
-        var a = await _uow.Appointments.GetByIdWithDetailsAsync(id, ct)
+        var a = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
             ?? throw new NotFoundException($"Appointment {id} not found.");
 
         if (a.Status != AppointmentStatus.Confirmed)

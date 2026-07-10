@@ -29,3 +29,51 @@
 .data-table tr:hover {
   background: rgba(59, 130, 246, 0.08);
 }
+
+/* Action button styles inside tables */
+.table-actions,
+.doctor-table-actions,
+.doctor-patient-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.table-actions button,
+.doctor-table-actions button,
+.doctor-patient-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.table-actions button:hover,
+.doctor-table-actions button:hover,
+.doctor-patient-actions button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.table-actions button.danger,
+.doctor-table-actions button.danger,
+.doctor-patient-actions button.danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.table-actions button.danger:hover,
+.doctor-table-actions button.danger:hover,
+.doctor-patient-actions button.danger:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: white;
+}

@@ -1,15 +1,19 @@
-import { useState } from "react";
-import { forgotPassword } from "../../services/authServices";
+import { useEffect, useState } from "react";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
 import "./Login.css";
 
 function ForgotPassword() {
+  const [isDark, setIsDark] = useState(true);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
+  useEffect(() => {
+    if (isDark) document.body.classList.add("dark");
+    else document.body.classList.remove("dark");
+  }, [isDark]);
+
+  function handleSubmit(e) {
     e.preventDefault();
 
     if (!email || !email.includes("@")) {
@@ -17,16 +21,8 @@ function ForgotPassword() {
       return;
     }
 
-    setLoading(true);
-    
-    try {
-      await forgotPassword({ email });
-      setMessage("Reset token sent! Check your email.");
-    } catch (err) {
-      setMessage(err.message || "Failed to send reset token.");
-    } finally {
-      setLoading(false);
-    }
+    setMessage("Ready for backend forgot password API.");
+    console.log({ email });
   }
 
   return (
@@ -56,14 +52,19 @@ function ForgotPassword() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <Button type="submit" disabled={loading}>
-            {loading ? "Sending..." : "Send Reset Token →"}
-          </Button>
+          <Button type="submit">Send Reset Token →</Button>
 
           <p className="auth-switch">
             Remembered your password? <a href="/login">Sign in</a>
           </p>
         </form>
+
+        <button
+          className="theme-toggle-btn"
+          onClick={() => setIsDark((prev) => !prev)}
+        >
+          {isDark ? "☀️ Light Mode" : "🌙 Dark Mode"}
+        </button>
       </section>
 
       <section className="auth-hero">

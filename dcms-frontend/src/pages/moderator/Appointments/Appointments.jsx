@@ -31,13 +31,14 @@ function Appointments() {
     { key: "status", label: "Status" },
   ];
 
-  const data = [
+  const [appointments] = useState([
     {
       id: 1,
       patient: "Ahmed Ali",
       doctor: "Dr. Sara",
       date: "05 Jul",
       status: "Pending",
+      doctorId: "1",
     },
     {
       id: 2,
@@ -45,8 +46,64 @@ function Appointments() {
       doctor: "Dr. Omar",
       date: "05 Jul",
       status: "Completed",
+      doctorId: "2",
     },
-  ];
+    {
+      id: 3,
+      patient: "Omar Mohamed",
+      doctor: "Dr. Sara",
+      date: "06 Jul",
+      status: "Confirmed",
+      doctorId: "1",
+    },
+    {
+      id: 4,
+      patient: "Yasmine Aly",
+      doctor: "Dr. Omar",
+      date: "07 Jul",
+      status: "Cancelled",
+      doctorId: "2",
+    },
+  ]);
+
+  // States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [doctorFilter, setDoctorFilter] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // 1. Search Query Filter
+  let filtered = appointments.filter(
+    (app) =>
+      app.patient.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.doctor.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // 2. Active Tab Filter
+  if (activeTab !== "All") {
+    filtered = filtered.filter((app) => app.status === activeTab);
+  }
+
+  // 3. Doctor Dropdown Filter
+  if (doctorFilter) {
+    filtered = filtered.filter((app) => app.doctorId === doctorFilter);
+  }
+
+  // 4. Sorting
+  if (sortBy === "oldest") {
+    filtered.sort((a, b) => a.id - b.id);
+  } else if (sortBy === "newest") {
+    filtered.sort((a, b) => b.id - a.id);
+  }
+
+  // 5. Pagination
+  const itemsPerPage = 2;
+  const totalPages = Math.max(Math.ceil(filtered.length / itemsPerPage), 1);
+  const activePage = Math.min(currentPage, totalPages);
+  const paginatedData = filtered.slice(
+    (activePage - 1) * itemsPerPage,
+    activePage * itemsPerPage
+  );
 
   return (
     <div className="appointments-page">
@@ -65,12 +122,23 @@ function Appointments() {
       </div>
 
       <div className="appointments-toolbar">
-        <SearchInput placeholder="Search appointment..." />
+        <SearchInput
+          placeholder="Search appointment..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+          onSearch={() => setCurrentPage(1)}
+        />
 
         <FilterDropdown
           label="Doctor"
-          value=""
-          onChange={() => {}}
+          value={doctorFilter}
+          onChange={(val) => {
+            setDoctorFilter(val);
+            setCurrentPage(1);
+          }}
           options={[
             { value: "", label: "All Doctors" },
             { value: "1", label: "Dr. Sara" },
@@ -79,20 +147,31 @@ function Appointments() {
         />
 
         <SortDropdown
-          value=""
-          onChange={() => {}}
+          value={sortBy}
+          onChange={(val) => {
+            setSortBy(val);
+            setCurrentPage(1);
+          }}
           options={[
+            { value: "", label: "Sort By" },
             { value: "newest", label: "Newest Booking" },
             { value: "oldest", label: "Oldest Booking" },
           ]}
         />
       </div>
 
-      <StatusTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+      <StatusTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={(tab) => {
+          setActiveTab(tab);
+          setCurrentPage(1);
+        }}
+      />
 
       <DataTable
         columns={columns}
-        data={data}
+        data={paginatedData}
         actions={(row) => (
           <div className="table-actions">
             <button
@@ -107,12 +186,21 @@ function Appointments() {
               Edit
             </button>
 
-            <button className="danger">Cancel</button>
+            <button
+              className="danger"
+              onClick={() => alert("Appointment has been cancelled.")}
+            >
+              Cancel
+            </button>
           </div>
         )}
       />
 
-      <Pagination currentPage={1} totalPages={5} onPageChange={() => {}} />
+      <Pagination
+        currentPage={activePage}
+        totalPages={totalPages}
+        onPageChange={(page) => setCurrentPage(page)}
+      />
     </div>
   );
 }

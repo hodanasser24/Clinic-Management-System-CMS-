@@ -60,13 +60,47 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<DCMS.Infrastructure.Data.ApplicationDbContext>();
     var hasher = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.IPasswordHasher<DCMS.Domain.Entities.User>>();
-    if (!System.Linq.Queryable.Any(db.Users, u => u.Role == DCMS.Domain.Enums.UserRole.Owner))
+
+    // ── Ensure Owner exists with a known password ──────────────────────────
+    var owner = db.Users.FirstOrDefault(u => u.Email == "owner@clinic.com");
+    if (owner == null)
     {
-        var owner = new DCMS.Domain.Entities.Owner { FullName = "Owner", Email = "owner@clinic.com", Role = DCMS.Domain.Enums.UserRole.Owner, Phone = "0100", IsActive = true, Specialization = "Surgery", Qualification = "MD", ExperienceYears = 15 };
+        owner = new DCMS.Domain.Entities.Owner { FullName = "Owner", Email = "owner@clinic.com", Role = DCMS.Domain.Enums.UserRole.Owner, Phone = "0100", IsActive = true, Specialization = "Surgery", Qualification = "MD", ExperienceYears = 15 };
         owner.PasswordHash = hasher.HashPassword(owner, "Admin123!");
         db.Users.Add(owner);
-        db.SaveChanges();
     }
+    else if (hasher.VerifyHashedPassword(owner, owner.PasswordHash, "Admin123!") == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed)
+    {
+        owner.PasswordHash = hasher.HashPassword(owner, "Admin123!");
+    }
+
+    // ── Ensure Admin exists (seed if missing, fix hash if wrong) ───────────
+    var admin = db.Users.FirstOrDefault(u => u.Email == "admin@clinic.com");
+    if (admin == null)
+    {
+        admin = new DCMS.Domain.Entities.Admin { FullName = "Admin User", Email = "admin@clinic.com", Role = DCMS.Domain.Enums.UserRole.Admin, Phone = "01000000001", IsActive = true };
+        admin.PasswordHash = hasher.HashPassword(admin, "Password123!");
+        db.Users.Add(admin);
+    }
+    else if (hasher.VerifyHashedPassword(admin, admin.PasswordHash, "Password123!") == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed)
+    {
+        admin.PasswordHash = hasher.HashPassword(admin, "Password123!");
+    }
+
+    // ── Ensure Doctor exists (seed if missing, fix hash if wrong) ──────────
+    var doctor = db.Users.FirstOrDefault(u => u.Email == "doctor@clinic.com");
+    if (doctor == null)
+    {
+        doctor = new DCMS.Domain.Entities.Doctor { FullName = "Doctor User", Email = "doctor@clinic.com", Role = DCMS.Domain.Enums.UserRole.Doctor, Phone = "01000000002", IsActive = true, Specialization = "Dentist", Qualification = "MD", ExperienceYears = 5 };
+        doctor.PasswordHash = hasher.HashPassword(doctor, "Password123!");
+        db.Users.Add(doctor);
+    }
+    else if (hasher.VerifyHashedPassword(doctor, doctor.PasswordHash, "Password123!") == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed)
+    {
+        doctor.PasswordHash = hasher.HashPassword(doctor, "Password123!");
+    }
+
+    db.SaveChanges();
 }
 if (app.Environment.IsDevelopment())
 {

@@ -1,0 +1,83 @@
+.patient-appointments-page {
+  padding: 30px;
+  color: white;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.page-header button {
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.toolbar {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.toolbar input,
+.toolbar select {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #172036;
+  color: white;
+}
+
+.appointments-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #172036;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.appointments-table th,
+.appointments-table td {
+  padding: 16px;
+  text-align: left;
+}
+
+.appointments-table tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.confirmed {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.pending {
+  color: #facc15;
+  font-weight: bold;
+}
+
+.completed {
+  color: #60a5fa;
+  font-weight: bold;
+}
+
+.appointments-table button {
+  margin-right: 8px;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+}
+
+.cancel {
+  background: #dc2626 !important;
+}

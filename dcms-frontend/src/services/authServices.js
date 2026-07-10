@@ -1,111 +1,25 @@
-const API_BASE_URL = "http://localhost:5118/api";
+import apiClient from './apiClient';
 
 export async function login(data) {
-  const response = await fetch(`${API_BASE_URL}/Auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || `Login failed. Status: ${response.status}`);
-  }
-
-  const result = await response.json();
-  
-  // Store authentication data exactly as required
-  localStorage.setItem("token", result.accessToken);
-  localStorage.setItem("refreshToken", result.refreshToken);
-  localStorage.setItem("patientId", result.userId); // userId serves as patientId for patient endpoints
-  localStorage.setItem("patientName", result.fullName);
-  localStorage.setItem("email", result.email);
-  localStorage.setItem("role", result.role); // 0 or "Patient" depending on backend serialization
-  
+  const { data: result } = await apiClient.post('/api/Auth/login', data);
+  localStorage.setItem('accessToken', result.accessToken);
+  localStorage.setItem('refreshToken', result.refreshToken);
   return result;
 }
 
 export async function registerPatient(data) {
-  const response = await fetch(`${API_BASE_URL}/Auth/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || `Registration failed. Status: ${response.status}`);
-  }
+  await apiClient.post('/api/Auth/register', data);
 }
 
 export async function forgotPassword(data) {
-  const response = await fetch(`${API_BASE_URL}/Auth/forgot-password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || `Failed to request password reset. Status: ${response.status}`);
-  }
+  await apiClient.post('/api/Auth/forgot-password', data);
 }
 
 export async function resetPassword(data) {
-  const response = await fetch(`${API_BASE_URL}/Auth/reset-password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || `Failed to reset password. Status: ${response.status}`);
-  }
+  await apiClient.post('/api/Auth/reset-password', data);
 }
 
-export async function logout() {
-  const token = getAuthToken();
-  if (token) {
-    try {
-      await fetch(`${API_BASE_URL}/Auth/logout`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-    } catch (err) {
-      console.error("Logout API failed, continuing with local cleanup:", err);
-    }
-  }
-  
-  // Always clean up locally
-  localStorage.removeItem("token");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("patientId");
-  localStorage.removeItem("patientName");
-  localStorage.removeItem("email");
-  localStorage.removeItem("role");
-}
-
-export function getCurrentPatientId() {
-  const storedId = localStorage.getItem("patientId");
-  return storedId ? parseInt(storedId, 10) : 1; 
-}
-
-export function getCurrentPatientName() {
-  return localStorage.getItem("patientName") || "Patient";
-}
-
-export function getAuthToken() {
-  return localStorage.getItem("token") || "";
+export function logout() {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
 }
