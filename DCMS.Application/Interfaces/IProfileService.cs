@@ -9,4 +9,6 @@ public interface IProfileService
     Task<DoctorProfileResponseDto> GetDoctorProfileAsync(int doctorId, CancellationToken ct = default);
     Task<DoctorProfileResponseDto> UpdateDoctorSelfProfileAsync(int doctorId, UpdateDoctorSelfProfileRequestDto dto, CancellationToken ct = default);
     Task<DoctorProfileResponseDto> UpdateDoctorPhotoAsync(int doctorId, UpdatePhotoRequestDto dto, CancellationToken ct = default);
+    Task<AdminProfileResponseDto> GetAdminProfileAsync(int adminId, CancellationToken ct = default);
+    Task<AdminProfileResponseDto> UpdateAdminProfileAsync(int adminId, UpdateAdminProfileRequestDto dto, CancellationToken ct = default);
 }

@@ -11,4 +11,5 @@ public interface INotificationService
     Task MarkAllAsReadAsync(int userId, CancellationToken ct = default);
     Task SendAsync(int userId, NotificationType type, NotificationPriority priority, string title, string message, int? relatedEntityId = null, string? relatedEntityType = null, CancellationToken ct = default);
     Task SendToRoleAsync(UserRole role, NotificationType type, NotificationPriority priority, string title, string message, int? relatedEntityId = null, string? relatedEntityType = null, CancellationToken ct = default);
+    Task DeleteAsync(int notificationId, int userId, CancellationToken ct = default);
 }

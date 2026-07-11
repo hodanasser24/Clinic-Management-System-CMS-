@@ -111,13 +111,60 @@ const PREVIEW_TOOTH_GEOMETRY = {
   },
 };
 
-function DentalChart({ readOnly = false }) {
+import { getPatientDentalChart, updateChartNotes, upsertToothRecord } from "../../../services/dentalChartServices";
+
+const backendToFrontendStatus = (status) => {
+  switch (status) {
+    case 0:
+    case "Healthy":
+      return "Healthy";
+    case 1:
+    case "Decayed":
+      return "Cavity";
+    case 2:
+    case "Filled":
+      return "Filling";
+    case 3:
+    case "Missing":
+    case 6:
+    case "NeedsExtraction":
+      return "Extraction";
+    case 4:
+    case "RootCanalTreated":
+      return "Root Canal";
+    case 5:
+    case "CrownPlaced":
+      return "Implant";
+    default:
+      return "Healthy";
+  }
+};
+
+const frontendToBackendStatus = (status) => {
+  switch (status) {
+    case "Healthy":
+      return 0;
+    case "Cavity":
+      return 1;
+    case "Filling":
+      return 2;
+    case "Extraction":
+      return 6;
+    case "Root Canal":
+      return 4;
+    case "Implant":
+      return 5;
+    default:
+      return 0;
+  }
+};
+
+function DentalChart({ patientId, readOnly = false }) {
   const [selectedTooth, setSelectedTooth] = useState(null);
-  const [toothStatus, setToothStatus] = useState({
-    16: "Filling",
-    24: "Cavity",
-    36: "Root Canal",
-  });
+  const [toothStatus, setToothStatus] = useState({});
+  const [chartNotes, setChartNotes] = useState("");
+  const [patientName, setPatientName] = useState("Patient");
+  const [loading, setLoading] = useState(true);
 
   // Grouped transform state to enforce synchronous batching
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
@@ -128,6 +175,27 @@ function DentalChart({ readOnly = false }) {
 
   const hasMoved = useRef(false);
   const svgRef = useRef(null);
+
+  useEffect(() => {
+    if (!patientId) return;
+    setLoading(true);
+    getPatientDentalChart(patientId)
+      .then((data) => {
+        setPatientName(data.patientName || "Patient");
+        setChartNotes(data.notes || "");
+        const statusMap = {};
+        if (data.toothRecords) {
+          data.toothRecords.forEach((record) => {
+            statusMap[record.toothNumber] = backendToFrontendStatus(record.toothStatus);
+          });
+        }
+        setToothStatus(statusMap);
+      })
+      .catch((err) => {
+        console.error("Failed to load patient dental chart:", err);
+      })
+      .finally(() => setLoading(false));
+  }, [patientId]);
 
   const selectedStatus = selectedTooth
     ? toothStatus[selectedTooth] || "Healthy"

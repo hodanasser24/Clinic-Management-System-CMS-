@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
+import { resetPassword } from "../../services/authServices";
 import "./Login.css";
 
 function ResetPassword() {
+  const navigate = useNavigate();
   const [isDark, setIsDark] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     token: "",
     newPassword: "",
   });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -21,16 +26,26 @@ function ResetPassword() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setError("");
+    setMessage("");
 
     if (!formData.email || !formData.token || !formData.newPassword) {
-      setMessage("Please fill all required fields.");
+      setError("Please fill all required fields.");
       return;
     }
 
-    setMessage("Ready for backend reset password API.");
-    console.log(formData);
+    try {
+      await resetPassword(formData);
+      setSuccess(true);
+      setMessage("Password reset successful! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (err) {
+      setError(err.message || "Failed to reset password.");
+    }
   }
 
   return (
@@ -50,7 +65,8 @@ function ResetPassword() {
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
-          {message && <div className="auth-error">{message}</div>}
+          {error && <div className="auth-error">{error}</div>}
+          {success && <div className="auth-success" style={{color: "#2ec4b6", backgroundColor: "rgba(46, 196, 182, 0.1)", padding: "0.75rem", borderRadius: "8px", marginBottom: "1rem", textAlign: "center"}}>{message}</div>}
 
           <Input
             label="Email"

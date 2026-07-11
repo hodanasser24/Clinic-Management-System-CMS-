@@ -71,4 +71,23 @@ public class ProfileService : IProfileService
         await _uow.SaveChangesAsync(ct);
         return _mapper.Map<DoctorProfileResponseDto>(doctor);
     }
+
+    public async Task<AdminProfileResponseDto> GetAdminProfileAsync(int adminId, CancellationToken ct = default)
+    {
+        var admin = await _uow.Admins.GetByIdAsync(adminId, ct);
+        if (admin == null) throw new NotFoundException($"Admin {adminId} not found.");
+        return _mapper.Map<AdminProfileResponseDto>(admin);
+    }
+
+    public async Task<AdminProfileResponseDto> UpdateAdminProfileAsync(int adminId, UpdateAdminProfileRequestDto dto, CancellationToken ct = default)
+    {
+        var admin = await _uow.Admins.GetByIdAsync(adminId, ct);
+        if (admin == null) throw new NotFoundException($"Admin {adminId} not found.");
+
+        admin.FullName = dto.FullName;
+        admin.Phone = dto.Phone;
+
+        await _uow.SaveChangesAsync(ct);
+        return _mapper.Map<AdminProfileResponseDto>(admin);
+    }
 }

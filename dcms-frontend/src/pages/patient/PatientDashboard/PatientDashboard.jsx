@@ -1,85 +1,137 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getCurrentPatientId, getCurrentPatientName } from "../../../services/authServices";
+import { getPatientProfile } from "../../../services/profileServices";
+import { getUpcomingPatientAppointments, getHistoryPatientAppointments } from "../../../services/appointmentServices";
+import { getNotifications } from "../../../services/notificationServices";
 import "./PatientDashboard.css";
 
 function PatientDashboard() {
   const navigate = useNavigate();
+  const patientId = getCurrentPatientId();
+  const [profile, setProfile] = useState(null);
+  const [upcoming, setUpcoming] = useState([]);
+  const [historyCount, setHistoryCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        const [profileData, upcomingData, historyData, notificationsData] = await Promise.all([
+          getPatientProfile(),
+          getUpcomingPatientAppointments(patientId, { page: 1, pageSize: 5 }),
+          getHistoryPatientAppointments(patientId, { page: 1, pageSize: 1 }),
+          getNotifications({ unreadOnly: true }).catch(() => ({ unreadCount: 0 }))
+        ]);
+        setProfile(profileData);
+        setUpcoming(upcomingData?.items || upcomingData || []);
+        setHistoryCount(historyData?.totalCount || 0);
+        setNotificationCount(notificationsData?.unreadCount || 0);
+      } catch (err) {
+        console.error("Error loading patient dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDashboardData();
+  }, [patientId]);
+
+  const welcomeName = profile?.fullName || getCurrentPatientName();
+  const nextAppt = upcoming[0];
 
   return (
     <div className="patient-dashboard-page">
       <div className="patient-header">
         <div>
-          <h1>Welcome, Ahmed Ali 👋</h1>
+          <h1>Welcome, {welcomeName} 👋</h1>
           <p>Manage your appointments and medical records easily.</p>
         </div>
 
         <button onClick={() => navigate("/patient/profile")}>My Profile</button>
       </div>
 
-      <div className="patient-stats">
-        <div className="patient-card">
-          <h3>Upcoming Appointments</h3>
-          <span>2</span>
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>
+          Loading dashboard...
         </div>
+      ) : (
+        <>
+          <div className="patient-stats">
+            <div className="patient-card">
+              <h3>Upcoming Appointments</h3>
+              <span>{upcoming.length}</span>
+            </div>
 
-        <div className="patient-card">
-          <h3>Completed Visits</h3>
-          <span>12</span>
-        </div>
+            <div className="patient-card">
+              <h3>Completed Visits</h3>
+              <span>{historyCount}</span>
+            </div>
 
-        <div className="patient-card">
-          <h3>Prescriptions</h3>
-          <span>4</span>
-        </div>
+            <div className="patient-card">
+              <h3>Prescriptions</h3>
+              <span>{profile?.medicalHistory ? 1 : 0}</span>
+            </div>
 
-        <div className="patient-card">
-          <h3>Notifications</h3>
-          <span>3</span>
-        </div>
-      </div>
-
-      <div className="patient-grid">
-        <div className="patient-section">
-          <h2>Next Appointment</h2>
-
-          <div className="appointment-box">
-            <h3>Dr. Sara Ahmed</h3>
-
-            <p>Orthodontics</p>
-
-            <p>Monday, 06 Jul 2026</p>
-
-            <p>10:30 AM</p>
-
-            <span className="confirmed">Confirmed</span>
-
-            <button onClick={() => navigate("/patient/appointments/1")}>
-              View Details
-            </button>
+            <div className="patient-card" onClick={() => navigate("/patient/notifications")} style={{ cursor: "pointer" }}>
+              <h3>Notifications</h3>
+              <span>{notificationCount}</span>
+            </div>
           </div>
-        </div>
 
-        <div className="patient-section">
-          <h2>Medical Summary</h2>
+          <div className="patient-grid">
+            <div className="patient-section">
+              <h2>Next Appointment</h2>
 
-          <p>
-            <strong>Blood Type:</strong> O+
-          </p>
+              {nextAppt ? (
+                <div className="appointment-box">
+                  <h3>Dr. {nextAppt.doctorName}</h3>
+                  <p>{nextAppt.serviceName}</p>
+                  <p>{nextAppt.appointmentDate}</p>
+                  <p>{nextAppt.startTime}</p>
+                  <span className={`status ${nextAppt.status.toLowerCase()}`}>
+                    {nextAppt.status}
+                  </span>
+                  <button onClick={() => navigate("/patient/appointments")}>
+                    View Details
+                  </button>
+                </div>
+              ) : (
+                <div className="appointment-box" style={{ textAlign: "center", padding: "2rem" }}>
+                  <p style={{ color: "var(--text-secondary)", marginBottom: "1rem" }}>
+                    No upcoming appointments scheduled.
+                  </p>
+                  <button onClick={() => navigate("/patient/appointments")}>
+                    Book Appointment
+                  </button>
+                </div>
+              )}
+            </div>
 
-          <p>
-            <strong>Allergies:</strong> None
-          </p>
+            <div className="patient-section">
+              <h2>Medical Summary</h2>
 
-          <p>
-            <strong>Chronic Diseases:</strong> None
-          </p>
+              <p>
+                <strong>Date of Birth:</strong> {profile?.dateOfBirth || "Not specified"}
+              </p>
 
-          <p>
-            <strong>Last Visit:</strong> 01 Jul 2026
-          </p>
-        </div>
-      </div>
+              <p>
+                <strong>Contact Phone:</strong> {profile?.phone || "Not specified"}
+              </p>
 
-      <div className="patient-section">
+              <p>
+                <strong>Email Address:</strong> {profile?.email || "Not specified"}
+              </p>
+
+              <p>
+                <strong>Medical History:</strong> {profile?.medicalHistory || "None specified"}
+              </p>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className="patient-section" style={{ marginTop: "2rem" }}>
         <h2>Quick Actions</h2>
 
         <div className="quick-buttons">

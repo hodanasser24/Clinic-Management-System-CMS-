@@ -1,46 +1,155 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getCurrentPatientId } from "../../../services/authServices";
+import {
+  getPatientAppointments,
+  cancelAppointment,
+  bookAppointment
+} from "../../../services/appointmentServices";
+import {
+  getBranches,
+  getServices,
+  getDoctors,
+  getAvailableSlots
+} from "../../../services/publicServices";
 import "./PatientAppointments.css";
 
 function PatientAppointments() {
   const navigate = useNavigate();
+  const patientId = getCurrentPatientId();
 
-  const [appointments] = useState([
-    {
-      id: 1,
-      doctor: "Dr. Sara Ahmed",
-      department: "Orthodontics",
-      date: "06 Jul 2026",
-      time: "10:30 AM",
-      status: "Confirmed",
-    },
-    {
-      id: 2,
-      doctor: "Dr. Mohamed Ali",
-      department: "Dental Surgery",
-      date: "15 Jul 2026",
-      time: "01:00 PM",
-      status: "Pending",
-    },
-    {
-      id: 3,
-      doctor: "Dr. Nada Hassan",
-      department: "Cleaning",
-      date: "22 Jun 2026",
-      time: "11:00 AM",
-      status: "Completed",
-    },
-  ]);
+  // Lists
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [branches, setBranches] = useState([]);
+  const [services, setServices] = useState([]);
+  const [doctors, setDoctors] = useState([]);
 
-  // States
+  // Filters & State
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+
+  // Booking Wizard State
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [bookingForm, setBookingForm] = useState({
+    branchId: "",
+    serviceId: "",
+    doctorId: "",
+    date: "",
+    startTime: "",
+    notes: ""
+  });
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  // Cancellation State
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [cancelId, setCancelId] = useState(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+  // Details Modal State
+  const [selectedAppt, setSelectedAppt] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const loadAppointments = async () => {
+    setLoading(true);
+    try {
+      const res = await getPatientAppointments(patientId);
+      setAppointments(res?.items || res || []);
+    } catch (err) {
+      console.error("Failed to load appointments:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAppointments();
+    // Load lists for wizard
+    getBranches().then(setBranches).catch(console.error);
+    getServices().then(setServices).catch(console.error);
+    getDoctors().then(setDoctors).catch(console.error);
+  }, [patientId]);
+
+  // Load slots when selection changes
+  useEffect(() => {
+    const { doctorId, branchId, date } = bookingForm;
+    if (doctorId && branchId && date) {
+      setLoadingSlots(true);
+      getAvailableSlots(doctorId, branchId, date)
+        .then((slots) => {
+          setAvailableSlots(slots || []);
+        })
+        .catch((err) => {
+          console.error("Error loading slots:", err);
+          setAvailableSlots([]);
+        })
+        .finally(() => setLoadingSlots(false));
+    } else {
+      setAvailableSlots([]);
+    }
+  }, [bookingForm.doctorId, bookingForm.branchId, bookingForm.date]);
+
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    setBookingError("");
+    setBookingSuccess(false);
+
+    const { branchId, serviceId, doctorId, date, startTime, notes } = bookingForm;
+    if (!branchId || !serviceId || !doctorId || !date || !startTime) {
+      setBookingError("Please fill out all required fields.");
+      return;
+    }
+
+    try {
+      await bookAppointment({
+        patientId,
+        doctorId: parseInt(doctorId, 10),
+        branchId: parseInt(branchId, 10),
+        serviceId: parseInt(serviceId, 10),
+        date,
+        startTime,
+        notes
+      });
+      setBookingSuccess(true);
+      setTimeout(() => {
+        setIsBookingOpen(false);
+        setBookingForm({
+          branchId: "",
+          serviceId: "",
+          doctorId: "",
+          date: "",
+          startTime: "",
+          notes: ""
+        });
+        setBookingSuccess(false);
+        loadAppointments();
+      }, 1500);
+    } catch (err) {
+      setBookingError(err.message || "Booking failed.");
+    }
+  };
+
+  const handleCancelSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await cancelAppointment(cancelId, cancelReason || "Cancelled by patient");
+      setIsCancelOpen(false);
+      setCancelReason("");
+      loadAppointments();
+    } catch (err) {
+      alert(err.message || "Cancellation failed.");
+    }
+  };
 
   // Filtering
   let filtered = appointments.filter(
     (app) =>
-      app.doctor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.department.toLowerCase().includes(searchQuery.toLowerCase())
+      app.doctorName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.serviceName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.branchName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (statusFilter !== "All") {
@@ -57,7 +166,7 @@ function PatientAppointments() {
     <div className="patient-appointments-page">
       <div className="page-header">
         <h1>My Appointments</h1>
-        <button onClick={() => alert("Opening booking wizard...")}>
+        <button onClick={() => setIsBookingOpen(true)}>
           + Book Appointment
         </button>
       </div>
@@ -65,7 +174,7 @@ function PatientAppointments() {
       <div className="toolbar">
         <input
           type="text"
-          placeholder="Search doctor..."
+          placeholder="Search doctor, service, branch..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -74,58 +183,249 @@ function PatientAppointments() {
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="All">All</option>
+          <option value="All">All Statuses</option>
           <option value="Upcoming">Upcoming</option>
           <option value="Completed">Completed</option>
           <option value="Cancelled">Cancelled</option>
         </select>
       </div>
 
-      <table className="appointments-table">
-        <thead>
-          <tr>
-            <th>Doctor</th>
-            <th>Department</th>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-secondary)" }}>
+          Loading appointments...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-secondary)", backgroundColor: "rgba(255,255,255,0.02)", borderRadius: "8px" }}>
+          No appointments found matching the filters.
+        </div>
+      ) : (
+        <table className="appointments-table">
+          <thead>
+            <tr>
+              <th>Doctor</th>
+              <th>Service</th>
+              <th>Branch</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {filtered.map((item) => (
-            <tr key={item.id}>
-              <td>{item.doctor}</td>
+          <tbody>
+            {filtered.map((item) => (
+              <tr key={item.id}>
+                <td>Dr. {item.doctorName}</td>
+                <td>{item.serviceName}</td>
+                <td>{item.branchName}</td>
+                <td>{item.date}</td>
+                <td>{item.startTime}</td>
+                <td>
+                  <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
+                </td>
+                <td>
+                  <button
+                    onClick={() => {
+                      setSelectedAppt(item);
+                      setIsDetailsOpen(true);
+                    }}
+                  >
+                    View
+                  </button>
 
-              <td>{item.department}</td>
+                  {["Pending", "Confirmed"].includes(item.status) && (
+                    <button
+                      className="cancel"
+                      onClick={() => {
+                        setCancelId(item.id);
+                        setIsCancelOpen(true);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
-              <td>{item.date}</td>
+      {/* Booking Wizard Modal */}
+      {isBookingOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content glass-card">
+            <h2>Book New Appointment</h2>
+            <form onSubmit={handleBookingSubmit}>
+              {bookingError && <div className="modal-error">{bookingError}</div>}
+              {bookingSuccess && (
+                <div className="modal-success">Booking Confirmed successfully!</div>
+              )}
 
-              <td>{item.time}</td>
-
-              <td>
-                <span className={item.status.toLowerCase()}>{item.status}</span>
-              </td>
-
-              <td>
-                <button
-                  onClick={() => navigate(`/patient/appointments/${item.id}`)}
+              <div className="form-group">
+                <label>Branch *</label>
+                <select
+                  value={bookingForm.branchId}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, branchId: e.target.value })
+                  }
+                  required
                 >
-                  View
-                </button>
+                  <option value="">Select Branch</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} - {b.location}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                <button
-                  className="cancel"
-                  onClick={() => alert("Appointment cancelled.")}
+              <div className="form-group">
+                <label>Service *</label>
+                <select
+                  value={bookingForm.serviceId}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, serviceId: e.target.value })
+                  }
+                  required
                 >
+                  <option value="">Select Service</option>
+                  {services.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} - ${s.price} ({s.estimatedDurationMinutes}m)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Doctor *</label>
+                <select
+                  value={bookingForm.doctorId}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, doctorId: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">Select Doctor</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      Dr. {d.fullName} - {d.specialization}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split("T")[0]}
+                  value={bookingForm.date}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, date: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Time Slot *</label>
+                <select
+                  value={bookingForm.startTime}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, startTime: e.target.value })
+                  }
+                  disabled={!bookingForm.doctorId || !bookingForm.branchId || !bookingForm.date || loadingSlots}
+                  required
+                >
+                  <option value="">
+                    {loadingSlots ? "Loading slots..." : "Select Time"}
+                  </option>
+                  {availableSlots.map((slot, index) => (
+                    <option key={index} value={slot}>
+                      {slot}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Notes</label>
+                <textarea
+                  placeholder="Any symptoms or notes..."
+                  value={bookingForm.notes}
+                  onChange={(e) =>
+                    setBookingForm({ ...bookingForm, notes: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="secondary-btn" onClick={() => setIsBookingOpen(false)}>
                   Cancel
                 </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                <button type="submit" disabled={bookingSuccess}>
+                  Confirm Booking
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Modal */}
+      {isCancelOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content glass-card">
+            <h2>Cancel Appointment</h2>
+            <form onSubmit={handleCancelSubmit}>
+              <p>Are you sure you want to cancel this appointment? This action cannot be undone.</p>
+              <div className="form-group" style={{ marginTop: "1rem" }}>
+                <label>Reason for Cancellation</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Scheduling conflict"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="secondary-btn" onClick={() => setIsCancelOpen(false)}>
+                  Go Back
+                </button>
+                <button type="submit" className="danger-btn">
+                  Yes, Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Details View Modal */}
+      {isDetailsOpen && selectedAppt && (
+        <div className="modal-overlay">
+          <div className="modal-content glass-card">
+            <h2>Appointment Details</h2>
+            <div className="details-grid" style={{ margin: "1.5rem 0", display: "grid", gap: "1rem" }}>
+              <div><strong>Doctor:</strong> Dr. {selectedAppt.doctorName}</div>
+              <div><strong>Service:</strong> {selectedAppt.serviceName}</div>
+              <div><strong>Branch:</strong> {selectedAppt.branchName}</div>
+              <div><strong>Date:</strong> {selectedAppt.date}</div>
+              <div><strong>Time:</strong> {selectedAppt.startTime}</div>
+              <div><strong>Status:</strong> <span className={`status ${selectedAppt.status.toLowerCase()}`}>{selectedAppt.status}</span></div>
+              {selectedAppt.notes && <div><strong>Notes:</strong> {selectedAppt.notes}</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="secondary-btn" onClick={() => setIsDetailsOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

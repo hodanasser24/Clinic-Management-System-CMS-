@@ -60,4 +60,21 @@ public class ProfileController : ControllerBase
         var result = await _profileService.UpdateDoctorPhotoAsync(GetUserId(), dto, ct);
         return Ok(result);
     }
+
+    // ── Admin profile ────────────────────────────────────────────────────────
+    [Authorize(Roles = "Admin")]
+    [HttpGet("admin")]
+    public async Task<IActionResult> GetAdminProfile(CancellationToken ct)
+    {
+        var result = await _profileService.GetAdminProfileAsync(GetUserId(), ct);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("admin")]
+    public async Task<IActionResult> UpdateAdminProfile([FromBody] UpdateAdminProfileRequestDto dto, CancellationToken ct)
+    {
+        var result = await _profileService.UpdateAdminProfileAsync(GetUserId(), dto, ct);
+        return Ok(result);
+    }
 }

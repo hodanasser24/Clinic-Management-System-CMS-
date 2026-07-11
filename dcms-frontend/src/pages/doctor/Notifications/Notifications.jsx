@@ -1,27 +1,81 @@
+import { useState, useEffect } from "react";
+import { getNotifications, markNotificationAsRead, deleteNotification } from "../../../services/notificationServices";
 import "./Notifications.css";
 
 function Notifications() {
-  const notifications = [
-    "New appointment assigned.",
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    "Patient Ahmed uploaded X-ray.",
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const result = await getNotifications({ page: 1, pageSize: 50 });
+      setNotifications(result?.items || []);
+    } catch (err) {
+      setError(err.message || "Failed to fetch notifications.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    "Prescription approved.",
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
-    "Follow-up reminder for Mona Hassan.",
-  ];
+  const handleRead = async (id) => {
+    try {
+      await markNotificationAsRead(id);
+      setNotifications(notifications.map(n => 
+        n.id === id ? { ...n, isRead: true } : n
+      ));
+    } catch (err) {
+      alert("Failed to mark as read: " + err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this notification?")) return;
+    try {
+      await deleteNotification(id);
+      setNotifications(notifications.filter(n => n.id !== id));
+    } catch (err) {
+      alert("Failed to delete notification: " + err.message);
+    }
+  };
+
+  if (loading) return <div className="notifications-page"><p>Loading notifications...</p></div>;
+  if (error) return <div className="notifications-page"><p className="error">{error}</p></div>;
 
   return (
     <div className="notifications-page">
       <h1>Notifications</h1>
 
-      <div className="notifications-list">
-        {notifications.map((item, index) => (
-          <div key={index} className="notification-card">
-            {item}
-          </div>
-        ))}
-      </div>
+      {notifications.length === 0 ? (
+        <p>No notifications to display.</p>
+      ) : (
+        <div className="notifications-list">
+          {notifications.map((item) => (
+            <div className={`notification-card ${item.isRead ? 'read' : 'unread'}`} key={item.id}>
+              <h3>{item.title} {item.isRead ? "(Read)" : ""}</h3>
+              <p>{item.message}</p>
+              
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  {new Date(item.createdAt).toLocaleString()}
+                </span>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+                  {!item.isRead && (
+                    <button onClick={() => handleRead(item.id)}>Read</button>
+                  )}
+                  <button className="danger" onClick={() => handleDelete(item.id)}>Delete</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

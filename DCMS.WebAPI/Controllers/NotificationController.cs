@@ -56,4 +56,15 @@ public class NotificationController : ControllerBase
         await _service.MarkAllAsReadAsync(userId, ct);
         return NoContent();
     }
+
+    /// <summary>
+    /// DELETE /api/notification/{id}
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
+        await _service.DeleteAsync(id, userId, ct);
+        return NoContent();
+    }
 }

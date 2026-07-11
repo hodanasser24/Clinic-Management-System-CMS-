@@ -79,6 +79,18 @@ function Sidebar() {
         <button type="button" onClick={() => setIsSupportOpen(true)}>
           Contact Support
         </button>
+        <button 
+          type="button" 
+          className="signout-btn" 
+          onClick={async () => {
+            const { logout } = await import("../../services/authServices");
+            await logout();
+            window.location.href = "/login";
+          }}
+          style={{ marginTop: "1rem", backgroundColor: "rgba(239, 71, 111, 0.1)", color: "#ef476f", border: "none", padding: "0.75rem", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
+        >
+          🚪 Sign Out
+        </button>
       </div>
 
       {isSupportOpen && (

@@ -1,28 +1,43 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
+import { forgotPassword } from "../../services/authServices";
 import "./Login.css";
 
 function ForgotPassword() {
+  const navigate = useNavigate();
   const [isDark, setIsDark] = useState(true);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (isDark) document.body.classList.add("dark");
     else document.body.classList.remove("dark");
   }, [isDark]);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setMessage("");
+    setError("");
 
     if (!email || !email.includes("@")) {
-      setMessage("Please enter a valid email.");
+      setError("Please enter a valid email.");
       return;
     }
 
-    setMessage("Ready for backend forgot password API.");
-    console.log({ email });
+    try {
+      await forgotPassword({ email });
+      setSuccess(true);
+      setMessage("Reset token sent to your email!");
+      setTimeout(() => {
+        navigate("/reset-password");
+      }, 2000);
+    } catch (err) {
+      setError(err.message || "Failed to initiate password reset.");
+    }
   }
 
   return (
@@ -42,7 +57,8 @@ function ForgotPassword() {
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
-          {message && <div className="auth-error">{message}</div>}
+          {error && <div className="auth-error">{error}</div>}
+          {success && <div className="auth-success" style={{color: "#2ec4b6", backgroundColor: "rgba(46, 196, 182, 0.1)", padding: "0.75rem", borderRadius: "8px", marginBottom: "1rem", textAlign: "center"}}>{message}</div>}
 
           <Input
             label="Email Address"

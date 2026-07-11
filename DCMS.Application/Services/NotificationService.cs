@@ -127,4 +127,13 @@ public class NotificationService : INotificationService
         await _uow.SaveChangesAsync(ct);
     }
 
+    public async Task DeleteAsync(int notificationId, int userId, CancellationToken ct = default)
+    {
+        var notification = await _uow.Notifications.GetByIdAsync(notificationId, ct);
+        if (notification == null) throw new NotFoundException($"Notification {notificationId} not found.");
+        if (notification.UserId != userId) throw new ForbiddenException("Cannot delete another user's notification.");
+
+        _uow.Notifications.Remove(notification);
+        await _uow.SaveChangesAsync(ct);
+    }
 }

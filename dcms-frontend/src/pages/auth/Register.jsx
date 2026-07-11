@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
+import { registerPatient } from "../../services/authServices";
 import "./Register.css";
 
 function Register() {
+  const navigate = useNavigate();
   const [isDark, setIsDark] = useState(true);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -13,6 +16,7 @@ function Register() {
     dateOfBirth: "",
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (isDark) document.body.classList.add("dark");
@@ -24,7 +28,7 @@ function Register() {
     setFormData({ ...formData, [name]: value });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setError("");
 
@@ -39,8 +43,15 @@ function Register() {
       return;
     }
 
-    console.log("Ready for backend register API:", formData);
-    setError("Backend API is not connected yet.");
+    try {
+      await registerPatient(formData);
+      setSuccess(true);
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (err) {
+      setError(err.message || "Registration failed.");
+    }
   }
 
   return (
@@ -61,6 +72,7 @@ function Register() {
 
         <form className="register-form" onSubmit={handleSubmit}>
           {error && <div className="auth-error">{error}</div>}
+          {success && <div className="auth-success" style={{color: "#2ec4b6", backgroundColor: "rgba(46, 196, 182, 0.1)", padding: "0.75rem", borderRadius: "8px", marginBottom: "1rem", textAlign: "center"}}>Registration successful! Redirecting...</div>}
 
           <Input
             label="Full Name"

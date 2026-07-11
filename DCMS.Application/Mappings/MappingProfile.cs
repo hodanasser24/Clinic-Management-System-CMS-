@@ -72,12 +72,15 @@ public class MappingProfile : Profile
         CreateMap<Doctor,  DoctorAccountResponseDto>();
         CreateMap<Doctor,  DoctorProfileResponseDto>();
         CreateMap<Patient, PatientProfileResponseDto>();
+        CreateMap<Admin, AdminProfileResponseDto>();
 
         CreateMap<UpdateDoctorSelfProfileRequestDto, Doctor>()
             .ForAllMembers(o => o.Condition((_, _, src) => src != null));
         CreateMap<UpdatePatientProfileRequestDto, Patient>()
             .ForAllMembers(o => o.Condition((_, _, src) => src != null));
         CreateMap<UpdateDoctorProfileRequestDto, Doctor>()
+            .ForAllMembers(o => o.Condition((_, _, src) => src != null));
+        CreateMap<UpdateAdminProfileRequestDto, Admin>()
             .ForAllMembers(o => o.Condition((_, _, src) => src != null));
 
         // ── Schedule ──────────────────────────────────────────────────────────

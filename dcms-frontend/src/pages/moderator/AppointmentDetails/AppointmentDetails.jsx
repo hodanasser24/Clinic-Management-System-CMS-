@@ -1,8 +1,66 @@
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { getAppointmentById, confirmAppointment, rejectAppointment, cancelAppointment } from "../../../services/appointmentServices";
 import "./AppointmentDetails.css";
 
 function AppointmentDetails() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const [appointment, setAppointment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await getAppointmentById(id);
+      setAppointment(data);
+    } catch (err) {
+      setError(err.message || "Failed to load appointment details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [id]);
+
+  const handleConfirm = async () => {
+    if (!window.confirm("Confirm this appointment?")) return;
+    try {
+      await confirmAppointment(id, {});
+      loadData();
+    } catch (err) {
+      alert("Failed to confirm: " + err.message);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!window.confirm("Reject this appointment?")) return;
+    try {
+      await rejectAppointment(id, {});
+      loadData();
+    } catch (err) {
+      alert("Failed to reject: " + err.message);
+    }
+  };
+
+  const handleCancel = async () => {
+    const reason = window.prompt("Reason for cancellation?");
+    if (reason === null) return;
+    try {
+      await cancelAppointment(id, { reason: reason || "Cancelled by moderator" });
+      loadData();
+    } catch (err) {
+      alert("Failed to cancel: " + err.message);
+    }
+  };
+
+  if (loading) return <div className="appointment-details-page"><p>Loading details...</p></div>;
+  if (error) return <div className="appointment-details-page"><p className="error">{error}</p></div>;
+  if (!appointment) return <div className="appointment-details-page"><p>Appointment not found.</p></div>;
 
   return (
     <div className="appointment-details-page">
@@ -20,80 +78,56 @@ function AppointmentDetails() {
       <div className="details-card">
         <section>
           <h2>Patient Information</h2>
-
-          <p>
-            <strong>Name:</strong> Ahmed Ali
-          </p>
-
-          <p>
-            <strong>Phone:</strong> 01012345678
-          </p>
-
-          <p>
-            <strong>Email:</strong> ahmed@gmail.com
-          </p>
-
-          <p>
-            <strong>Gender:</strong> Male
-          </p>
+          <p><strong>Name:</strong> {appointment.patientName}</p>
+          <p><strong>Patient ID:</strong> {appointment.patientId}</p>
         </section>
 
         <section>
           <h2>Doctor Information</h2>
-
-          <p>
-            <strong>Doctor:</strong> Dr. Sara
-          </p>
-
-          <p>
-            <strong>Department:</strong> Orthodontics
-          </p>
+          <p><strong>Doctor:</strong> Dr. {appointment.doctorName}</p>
+          <p><strong>Service:</strong> {appointment.serviceName}</p>
+          <p><strong>Branch:</strong> {appointment.branchName}</p>
         </section>
 
         <section>
           <h2>Appointment Information</h2>
-
-          <p>
-            <strong>Appointment ID:</strong> #1005
-          </p>
-
-          <p>
-            <strong>Date:</strong> 05 Jul 2026
-          </p>
-
-          <p>
-            <strong>Time:</strong> 10:00 AM
-          </p>
-
+          <p><strong>Appointment ID:</strong> #{appointment.id}</p>
+          <p><strong>Date:</strong> {appointment.date}</p>
+          <p><strong>Time:</strong> {appointment.startTime}</p>
           <p>
             <strong>Status:</strong>{" "}
-            <span className="status-badge pending">Pending</span>
+            <span className={`status-badge ${appointment.status?.toLowerCase()}`}>
+              {appointment.status}
+            </span>
           </p>
-
-          <p>
-            <strong>Reason:</strong> Teeth Cleaning
-          </p>
+          <p><strong>Attendance:</strong> {appointment.attendanceStatus}</p>
         </section>
 
         <section>
           <h2>Notes</h2>
-
           <textarea
             rows="5"
-            defaultValue="Patient requested a regular teeth cleaning appointment."
+            readOnly
+            value={appointment.notes || "No notes provided."}
           />
         </section>
 
         <div className="details-actions">
-          <button onClick={() => alert("Appointment confirmed successfully.")}>Confirm</button>
+          {appointment.status === "Pending" && (
+            <>
+              <button onClick={handleConfirm}>Confirm</button>
+              <button className="danger" onClick={handleReject}>Reject</button>
+            </>
+          )}
 
-          <button onClick={() => alert("Reschedule request submitted.")}>Reschedule</button>
+          {["Pending", "Confirmed"].includes(appointment.status) && (
+            <button className="danger" onClick={handleCancel}>Cancel</button>
+          )}
 
-          <button onClick={() => navigate("/moderator/appointments/edit/1")}>
+          {/* Navigation to edit */}
+          <button onClick={() => navigate(`/moderator/appointments/edit/${id}`)}>
             Edit
           </button>
-
-          <button className="danger" onClick={() => alert("Appointment has been cancelled.")}>Cancel</button>
         </div>
       </div>
     </div>

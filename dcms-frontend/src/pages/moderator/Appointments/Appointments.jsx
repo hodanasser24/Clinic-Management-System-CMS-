@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Appointments.css";
 
@@ -8,6 +8,7 @@ import FilterDropdown from "../../../components/common/FilterDropdown/FilterDrop
 import SortDropdown from "../../../components/common/SortDropdown/SortDropdown";
 import DataTable from "../../../components/common/DataTable/DataTable";
 import Pagination from "../../../components/common/Pagination/Pagination";
+import { getAllAppointments, cancelAppointment } from "../../../services/appointmentServices";
 
 function Appointments() {
   const navigate = useNavigate();
@@ -25,68 +26,64 @@ function Appointments() {
 
   const columns = [
     { key: "id", label: "ID" },
-    { key: "patient", label: "Patient" },
-    { key: "doctor", label: "Doctor" },
+    { key: "patientName", label: "Patient" },
+    { key: "doctorName", label: "Doctor" },
     { key: "date", label: "Date" },
     { key: "status", label: "Status" },
   ];
 
-  const [appointments] = useState([
-    {
-      id: 1,
-      patient: "Ahmed Ali",
-      doctor: "Dr. Sara",
-      date: "05 Jul",
-      status: "Pending",
-      doctorId: "1",
-    },
-    {
-      id: 2,
-      patient: "Mona Hassan",
-      doctor: "Dr. Omar",
-      date: "05 Jul",
-      status: "Completed",
-      doctorId: "2",
-    },
-    {
-      id: 3,
-      patient: "Omar Mohamed",
-      doctor: "Dr. Sara",
-      date: "06 Jul",
-      status: "Confirmed",
-      doctorId: "1",
-    },
-    {
-      id: 4,
-      patient: "Yasmine Aly",
-      doctor: "Dr. Omar",
-      date: "07 Jul",
-      status: "Cancelled",
-      doctorId: "2",
-    },
-  ]);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // States
   const [searchQuery, setSearchQuery] = useState("");
   const [doctorFilter, setDoctorFilter] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  // 1. Search Query Filter
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: currentPage,
+        pageSize: 10,
+        status: activeTab !== "All" ? activeTab : undefined
+      };
+      const data = await getAllAppointments(params);
+      setAppointments(data?.items || []);
+      setTotalCount(data?.totalCount || 0);
+    } catch (err) {
+      console.error("Failed to fetch appointments", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [currentPage, activeTab]);
+
+  const handleCancel = async (id) => {
+    if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+    try {
+      await cancelAppointment(id, "Cancelled by moderator");
+      fetchAppointments();
+    } catch (err) {
+      alert("Cancellation failed: " + err.message);
+    }
+  };
+
+  // 1. Search Query Filter (Client Side since API doesn't have search query param yet)
   let filtered = appointments.filter(
     (app) =>
-      app.patient.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.doctor.toLowerCase().includes(searchQuery.toLowerCase())
+      app.patientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.doctorName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  // 2. Active Tab Filter
-  if (activeTab !== "All") {
-    filtered = filtered.filter((app) => app.status === activeTab);
-  }
 
   // 3. Doctor Dropdown Filter
   if (doctorFilter) {
-    filtered = filtered.filter((app) => app.doctorId === doctorFilter);
+    filtered = filtered.filter((app) => app.doctorId?.toString() === doctorFilter);
   }
 
   // 4. Sorting
@@ -96,14 +93,9 @@ function Appointments() {
     filtered.sort((a, b) => b.id - a.id);
   }
 
-  // 5. Pagination
-  const itemsPerPage = 2;
-  const totalPages = Math.max(Math.ceil(filtered.length / itemsPerPage), 1);
-  const activePage = Math.min(currentPage, totalPages);
-  const paginatedData = filtered.slice(
-    (activePage - 1) * itemsPerPage,
-    activePage * itemsPerPage
-  );
+  // 5. Pagination calculation for UI
+  const itemsPerPage = 10;
+  const totalPages = Math.max(Math.ceil(totalCount / itemsPerPage), 1);
 
   return (
     <div className="appointments-page">
@@ -169,35 +161,43 @@ function Appointments() {
         }}
       />
 
-      <DataTable
-        columns={columns}
-        data={paginatedData}
-        actions={(row) => (
-          <div className="table-actions">
-            <button
-              onClick={() => navigate(`/moderator/appointments/${row.id}`)}
-            >
-              View
-            </button>
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>
+          Loading appointments...
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filtered}
+          actions={(row) => (
+            <div className="table-actions">
+              <button
+                onClick={() => navigate(`/moderator/appointments/${row.id}`)}
+              >
+                View
+              </button>
 
-            <button
-              onClick={() => navigate(`/moderator/appointments/edit/${row.id}`)}
-            >
-              Edit
-            </button>
+              <button
+                onClick={() => navigate(`/moderator/appointments/edit/${row.id}`)}
+              >
+                Edit
+              </button>
 
-            <button
-              className="danger"
-              onClick={() => alert("Appointment has been cancelled.")}
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-      />
+              {["Pending", "Confirmed"].includes(row.status) && (
+                <button
+                  className="danger"
+                  onClick={() => handleCancel(row.id)}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          )}
+        />
+      )}
 
       <Pagination
-        currentPage={activePage}
+        currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={(page) => setCurrentPage(page)}
       />
