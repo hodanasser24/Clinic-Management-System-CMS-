@@ -24,6 +24,9 @@ function Profile() {
         phone: data.phone || "",
         dateOfBirth: data.dateOfBirth || "",
         medicalHistory: data.medicalHistory || "",
+        bloodType: data.bloodType || "",
+        gender: data.gender || "",
+        allergies: data.allergies || "",
       });
     } catch (err) {
       setError(err.message || "Failed to load profile.");
@@ -85,6 +88,28 @@ function Profile() {
           rows="3"
         />
 
+        <label>Gender</label>
+        <input 
+          value={isEditing ? formData.gender : profile?.gender || ""} 
+          onChange={(e) => setFormData({...formData, gender: e.target.value})}
+          readOnly={!isEditing} 
+        />
+
+        <label>Blood Type</label>
+        <input 
+          value={isEditing ? formData.bloodType : profile?.bloodType || ""} 
+          onChange={(e) => setFormData({...formData, bloodType: e.target.value})}
+          readOnly={!isEditing} 
+        />
+
+        <label>Allergies</label>
+        <textarea 
+          value={isEditing ? formData.allergies : profile?.allergies || ""} 
+          onChange={(e) => setFormData({...formData, allergies: e.target.value})}
+          readOnly={!isEditing} 
+          rows="2"
+        />
+
         {isEditing ? (
           <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
             <button onClick={handleSave}>Save Changes</button>
@@ -95,6 +120,9 @@ function Profile() {
                 phone: profile.phone || "",
                 dateOfBirth: profile.dateOfBirth || "",
                 medicalHistory: profile.medicalHistory || "",
+                bloodType: profile.bloodType || "",
+                gender: profile.gender || "",
+                allergies: profile.allergies || "",
               });
             }}>Cancel</button>
           </div>

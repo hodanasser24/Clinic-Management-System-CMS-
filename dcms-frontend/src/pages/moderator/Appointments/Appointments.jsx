@@ -8,6 +8,7 @@ import FilterDropdown from "../../../components/common/FilterDropdown/FilterDrop
 import SortDropdown from "../../../components/common/SortDropdown/SortDropdown";
 import DataTable from "../../../components/common/DataTable/DataTable";
 import Pagination from "../../../components/common/Pagination/Pagination";
+import CancelModal from "../../../components/ui/CancelModal/CancelModal";
 import { getAllAppointments, cancelAppointment } from "../../../services/appointmentServices";
 
 function Appointments() {
@@ -34,6 +35,10 @@ function Appointments() {
 
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal State
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
 
   // States
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,10 +69,16 @@ function Appointments() {
     fetchAppointments();
   }, [currentPage, activeTab]);
 
-  const handleCancel = async (id) => {
-    if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+  const initiateCancel = (id) => {
+    setAppointmentToCancel(id);
+    setCancelModalOpen(true);
+  };
+
+  const handleCancel = async (reason) => {
     try {
-      await cancelAppointment(id, "Cancelled by moderator");
+      await cancelAppointment(appointmentToCancel, reason);
+      setCancelModalOpen(false);
+      setAppointmentToCancel(null);
       fetchAppointments();
     } catch (err) {
       alert("Cancellation failed: " + err.message);
@@ -186,7 +197,7 @@ function Appointments() {
               {["Pending", "Confirmed"].includes(row.status) && (
                 <button
                   className="danger"
-                  onClick={() => handleCancel(row.id)}
+                  onClick={() => initiateCancel(row.id)}
                 >
                   Cancel
                 </button>
@@ -200,6 +211,15 @@ function Appointments() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={(page) => setCurrentPage(page)}
+      />
+
+      <CancelModal
+        isOpen={cancelModalOpen}
+        onClose={() => {
+          setCancelModalOpen(false);
+          setAppointmentToCancel(null);
+        }}
+        onConfirm={handleCancel}
       />
     </div>
   );

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DCMS.Application.DTOs.Profile;
 using DCMS.Application.DTOs.Common;
+using DCMS.Domain.Entities;
+using DCMS.Domain.Enums;
+using Microsoft.AspNetCore.Identity;
 
 namespace DCMS.WebAPI.Controllers;
 
@@ -17,10 +20,12 @@ namespace DCMS.WebAPI.Controllers;
 public class PatientController : ControllerBase
 {
     private readonly IUnitOfWork _uow;
+    private readonly IPasswordHasher<User> _passwordHasher;
 
-    public PatientController(IUnitOfWork uow)
+    public PatientController(IUnitOfWork uow, IPasswordHasher<User> passwordHasher)
     {
         _uow = uow;
+        _passwordHasher = passwordHasher;
     }
 
     /// <summary>
@@ -51,6 +56,9 @@ public class PatientController : ControllerBase
                 Phone = p.Phone,
                 DateOfBirth = p.DateOfBirth,
                 MedicalHistory = p.MedicalHistory,
+                BloodType = p.BloodType,
+                Gender = p.Gender,
+                Allergies = p.Allergies,
                 IsFirstLogin = p.IsFirstLogin,
                 IsActive = p.IsActive,
                 CreatedAt = p.CreatedAt
@@ -79,6 +87,9 @@ public class PatientController : ControllerBase
             patient.DateOfBirth,
             patient.IsActive,
             patient.MedicalHistory,
+            patient.BloodType,
+            patient.Gender,
+            patient.Allergies,
             patient.IsFirstLogin,
             patient.CreatedAt
         });
@@ -121,5 +132,82 @@ public class PatientController : ControllerBase
                 r.CreatedAt
             })
         });
+    }
+
+    /// <summary>
+    /// Create a new patient (Moderator/Admin/Owner only).
+    /// </summary>
+    [Authorize(Roles = "Admin,Owner")]
+    [HttpPost]
+    public async Task<IActionResult> CreatePatient([FromBody] CreatePatientByAdminRequestDto dto, CancellationToken ct)
+    {
+        var existing = await _uow.Patients.GetByEmailAsync(dto.Email, ct);
+        if (existing != null)
+            throw new ConflictException("Email is already registered.");
+
+        var patient = new Patient
+        {
+            FullName = dto.FullName,
+            Email = dto.Email,
+            Phone = dto.Phone,
+            DateOfBirth = dto.DateOfBirth,
+            MedicalHistory = dto.MedicalHistory,
+            BloodType = dto.BloodType,
+            Gender = dto.Gender,
+            Allergies = dto.Allergies,
+            Role = UserRole.Patient,
+            IsFirstLogin = true, // Force them to change password when they first log in
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        patient.PasswordHash = _passwordHasher.HashPassword(patient, dto.Password);
+
+        await _uow.Patients.AddAsync(patient, ct);
+        await _uow.SaveChangesAsync(ct);
+
+        return Ok(new { patient.Id, patient.FullName });
+    }
+
+    /// <summary>
+    /// Update a patient (Moderator/Admin/Owner only).
+    /// </summary>
+    [Authorize(Roles = "Admin,Owner")]
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdatePatient(int id, [FromBody] UpdatePatientRequestDto dto, CancellationToken ct)
+    {
+        var patient = await _uow.Patients.GetByIdAsync(id, ct)
+            ?? throw new NotFoundException($"Patient {id} not found.");
+
+        patient.FullName = dto.FullName;
+        patient.Phone = dto.Phone;
+        patient.DateOfBirth = dto.DateOfBirth;
+        patient.MedicalHistory = dto.MedicalHistory;
+        patient.BloodType = dto.BloodType;
+        patient.Gender = dto.Gender;
+        patient.Allergies = dto.Allergies;
+        patient.UpdatedAt = DateTime.UtcNow;
+
+        await _uow.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Soft delete a patient (Moderator/Admin/Owner only).
+    /// </summary>
+    [Authorize(Roles = "Admin,Owner")]
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> SoftDeletePatient(int id, CancellationToken ct)
+    {
+        var patient = await _uow.Patients.GetByIdAsync(id, ct)
+            ?? throw new NotFoundException($"Patient {id} not found.");
+
+        patient.IsActive = false;
+        patient.UpdatedAt = DateTime.UtcNow;
+
+        await _uow.SaveChangesAsync(ct);
+
+        return NoContent();
     }
 }

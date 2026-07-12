@@ -137,7 +137,7 @@ namespace DCMS.Infrastructure.Migrations
                         .HasDatabaseName("UX_Appointment_Doctor_Date_StartTime_Active")
                         .HasFilter("\"Status\" NOT IN ('Cancelled', 'Rejected')");
 
-                    b.ToTable("Appointments");
+                    b.ToTable("Appointments", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.Branch", b =>
@@ -177,7 +177,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Branches");
+                    b.ToTable("Branches", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.BranchModificationRequest", b =>
@@ -247,7 +247,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("BranchModificationRequests");
+                    b.ToTable("BranchModificationRequests", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.ContactMessage", b =>
@@ -331,7 +331,7 @@ namespace DCMS.Infrastructure.Migrations
                     b.HasIndex("Type")
                         .HasDatabaseName("IX_ContactMessage_Type");
 
-                    b.ToTable("ContactMessages");
+                    b.ToTable("ContactMessages", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.DentalChart", b =>
@@ -364,7 +364,36 @@ namespace DCMS.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_DentalChart_PatientId");
 
-                    b.ToTable("DentalCharts");
+                    b.ToTable("DentalCharts", (string)null);
+                });
+
+            modelBuilder.Entity("DCMS.Domain.Entities.DoctorNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.ToTable("DoctorNotes", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.FAQ", b =>
@@ -399,7 +428,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FAQs");
+                    b.ToTable("FAQs", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.FAQModificationRequest", b =>
@@ -461,7 +490,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("FAQModificationRequests");
+                    b.ToTable("FAQModificationRequests", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.Notification", b =>
@@ -522,7 +551,7 @@ namespace DCMS.Infrastructure.Migrations
                     b.HasIndex("UserId", "IsRead")
                         .HasDatabaseName("IX_Notification_UserId_IsRead");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.OfferDiscount", b =>
@@ -574,7 +603,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("OfferDiscounts");
+                    b.ToTable("OfferDiscounts", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.OfferDiscountModificationRequest", b =>
@@ -651,7 +680,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("OfferDiscountModificationRequests");
+                    b.ToTable("OfferDiscountModificationRequests", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.Prescription", b =>
@@ -681,7 +710,7 @@ namespace DCMS.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_Prescription_ReportId");
 
-                    b.ToTable("Prescriptions");
+                    b.ToTable("Prescriptions", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.PrescriptionItem", b =>
@@ -732,7 +761,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasIndex("PrescriptionId");
 
-                    b.ToTable("PrescriptionItems");
+                    b.ToTable("PrescriptionItems", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.Report", b =>
@@ -807,7 +836,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Reports");
+                    b.ToTable("Reports", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.Revenue", b =>
@@ -852,7 +881,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("Revenues");
+                    b.ToTable("Revenues", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.Schedule", b =>
@@ -903,7 +932,7 @@ namespace DCMS.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_Schedule_Doctor_Branch_DayOfWeek");
 
-                    b.ToTable("Schedules");
+                    b.ToTable("Schedules", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.ScheduleChangeRequest", b =>
@@ -1004,7 +1033,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasIndex("ScheduleId");
 
-                    b.ToTable("ScheduleChangeRequests");
+                    b.ToTable("ScheduleChangeRequests", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.Service", b =>
@@ -1040,7 +1069,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Services");
+                    b.ToTable("Services", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.ServiceModificationRequest", b =>
@@ -1111,7 +1140,7 @@ namespace DCMS.Infrastructure.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("ServiceModificationRequests");
+                    b.ToTable("ServiceModificationRequests", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.SystemLog", b =>
@@ -1175,7 +1204,7 @@ namespace DCMS.Infrastructure.Migrations
                     b.HasIndex("UserId", "Date")
                         .HasDatabaseName("IX_SystemLog_UserId_Date");
 
-                    b.ToTable("SystemLogs");
+                    b.ToTable("SystemLogs", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.ToothRecord", b =>
@@ -1228,7 +1257,7 @@ namespace DCMS.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_ToothRecord_Chart_ToothNumber");
 
-                    b.ToTable("ToothRecords");
+                    b.ToTable("ToothRecords", (string)null);
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.User", b =>
@@ -1355,8 +1384,17 @@ namespace DCMS.Infrastructure.Migrations
                 {
                     b.HasBaseType("DCMS.Domain.Entities.User");
 
+                    b.Property<string>("Allergies")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BloodType")
+                        .HasColumnType("text");
+
                     b.Property<DateOnly>("DateOfBirth")
                         .HasColumnType("date");
+
+                    b.Property<string>("Gender")
+                        .HasColumnType("text");
 
                     b.Property<string>("MedicalHistory")
                         .HasColumnType("text");
@@ -1471,6 +1509,17 @@ namespace DCMS.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("DCMS.Domain.Entities.DoctorNote", b =>
+                {
+                    b.HasOne("DCMS.Domain.Entities.Doctor", "Doctor")
+                        .WithMany("DoctorNotes")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
                 });
 
             modelBuilder.Entity("DCMS.Domain.Entities.FAQModificationRequest", b =>
@@ -1801,6 +1850,8 @@ namespace DCMS.Infrastructure.Migrations
             modelBuilder.Entity("DCMS.Domain.Entities.Doctor", b =>
                 {
                     b.Navigation("Appointments");
+
+                    b.Navigation("DoctorNotes");
 
                     b.Navigation("Reports");
 

@@ -38,6 +38,9 @@ public class Patient : User
 {
     public DateOnly DateOfBirth { get; set; }
     public string? MedicalHistory { get; set; }
+    public string? BloodType { get; set; }
+    public string? Gender { get; set; }
+    public string? Allergies { get; set; }
 
     public virtual ICollection<Appointment> Appointments { get; set; }
     public virtual ICollection<Report> Reports { get; set; }
@@ -62,6 +65,7 @@ public class Doctor : User
     public virtual ICollection<Schedule> Schedules { get; set; }
     public virtual ICollection<Report> Reports { get; set; }
     public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequests { get; set; }
+    public virtual ICollection<DoctorNote> DoctorNotes { get; set; }
 
     public Doctor()
     {
@@ -69,6 +73,7 @@ public class Doctor : User
         Schedules             = new HashSet<Schedule>();
         Reports               = new HashSet<Report>();
         ScheduleChangeRequests = new HashSet<ScheduleChangeRequest>();
+        DoctorNotes           = new HashSet<DoctorNote>();
     }
 }
 

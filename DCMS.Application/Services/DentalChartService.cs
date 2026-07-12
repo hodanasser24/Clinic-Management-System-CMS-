@@ -108,6 +108,60 @@ public class DentalChartService : IDentalChartService
         return await MapToResponseAsync(updatedCharts.First(), ct);
     }
 
+    public async Task<DentalChartResponseDto> BulkUpsertToothRecordsAsync(int patientId, BulkUpsertToothRecordsRequestDto dto, int requestingDoctorId, CancellationToken ct = default)
+    {
+        var doctor = await _uow.Doctors.GetByIdAsync(requestingDoctorId, ct);
+        if (doctor == null) throw new ForbiddenException("Only doctors can update tooth records.");
+
+        var charts = await _uow.DentalCharts.FindAsync(dc => dc.PatientId == patientId, ct);
+        var chart = charts.FirstOrDefault();
+
+        if (chart == null)
+        {
+            chart = new DentalChart { PatientId = patientId, LastUpdated = DateTime.UtcNow };
+            await _uow.DentalCharts.AddAsync(chart, ct);
+            await _uow.SaveChangesAsync(ct);
+        }
+
+        var existingRecords = (await _uow.ToothRecords.FindAsync(t => t.ChartId == chart.Id, ct)).ToList();
+
+        foreach (var recordDto in dto.Records)
+        {
+            var toothRecord = existingRecords.FirstOrDefault(t => t.ToothNumber == recordDto.ToothNumber);
+
+            if (toothRecord == null)
+            {
+                toothRecord = new ToothRecord
+                {
+                    ChartId = chart.Id,
+                    ToothNumber = recordDto.ToothNumber,
+                    ToothStatus = recordDto.ToothStatus,
+                    TreatmentType = recordDto.TreatmentType,
+                    TreatmentDate = recordDto.TreatmentDate,
+                    Notes = recordDto.Notes,
+                    LastUpdatedInReportId = recordDto.LastUpdatedInReportId,
+                    LastUpdated = DateTime.UtcNow
+                };
+                await _uow.ToothRecords.AddAsync(toothRecord, ct);
+            }
+            else
+            {
+                toothRecord.ToothStatus = recordDto.ToothStatus;
+                toothRecord.TreatmentType = recordDto.TreatmentType;
+                toothRecord.TreatmentDate = recordDto.TreatmentDate;
+                toothRecord.Notes = recordDto.Notes;
+                toothRecord.LastUpdatedInReportId = recordDto.LastUpdatedInReportId;
+                toothRecord.LastUpdated = DateTime.UtcNow;
+            }
+        }
+
+        chart.LastUpdated = DateTime.UtcNow;
+        await _uow.SaveChangesAsync(ct);
+
+        var updatedCharts = await _uow.DentalCharts.FindAsync(dc => dc.PatientId == patientId, ct);
+        return await MapToResponseAsync(updatedCharts.First(), ct);
+    }
+
     private async Task<DentalChartResponseDto> MapToResponseAsync(DentalChart dc, CancellationToken ct)
     {
         var patient = dc.Patient ?? await _uow.Patients.GetByIdAsync(dc.PatientId, ct);

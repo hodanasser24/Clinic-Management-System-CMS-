@@ -98,6 +98,9 @@ public class AuthService : IAuthService
             Phone          = dto.Phone,
             DateOfBirth    = dto.DateOfBirth,
             MedicalHistory = dto.MedicalHistory,
+            BloodType      = dto.BloodType,
+            Gender         = dto.Gender,
+            Allergies      = dto.Allergies,
             Role           = UserRole.Patient,
             IsActive       = true,
             IsFirstLogin   = false   // Self-registered patients don't get forced first-login

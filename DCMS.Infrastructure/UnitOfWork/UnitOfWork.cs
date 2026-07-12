@@ -33,6 +33,7 @@ public sealed class UnitOfWork : IUnitOfWork
     private readonly IAppointmentRepository _appointments;
     private readonly IScheduleRepository    _schedules;
     private readonly IReportRepository      _reports;
+    private readonly IPrescriptionRepository _prescriptions;
 
     // ── Generic repositories — lazily initialized ──────────────────────────
     private IGenericRepository<Branch>?                         _branches;
@@ -40,7 +41,6 @@ public sealed class UnitOfWork : IUnitOfWork
     private IGenericRepository<FAQ>?                            _faqs;
     private IGenericRepository<OfferDiscount>?                  _offerDiscounts;
     private IGenericRepository<ContactMessage>?                 _contactMessages;
-    private IGenericRepository<Prescription>?                   _prescriptions;
     private IGenericRepository<PrescriptionItem>?               _prescriptionItems;
     private IGenericRepository<DentalChart>?                    _dentalCharts;
     private IGenericRepository<ToothRecord>?                    _toothRecords;
@@ -52,6 +52,7 @@ public sealed class UnitOfWork : IUnitOfWork
     private IGenericRepository<Notification>?                   _notifications;
     private IGenericRepository<SystemLog>?                      _systemLogs;
     private IGenericRepository<Revenue>?                        _revenues;
+    private IGenericRepository<DoctorNote>?                     _doctorNotes;
 
     public UnitOfWork(
         ApplicationDbContext context,
@@ -61,7 +62,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IGuestRepository       guests,
         IAppointmentRepository appointments,
         IScheduleRepository    schedules,
-        IReportRepository      reports)
+        IReportRepository      reports,
+        IPrescriptionRepository prescriptions)
     {
         _context      = context;
         _patients     = patients;
@@ -71,6 +73,7 @@ public sealed class UnitOfWork : IUnitOfWork
         _appointments = appointments;
         _schedules    = schedules;
         _reports      = reports;
+        _prescriptions = prescriptions;
     }
 
     // ── IUnitOfWork properties ────────────────────────────────────────────
@@ -82,14 +85,13 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAppointmentRepository Appointments => _appointments;
     public IScheduleRepository    Schedules    => _schedules;
     public IReportRepository      Reports      => _reports;
+    public IPrescriptionRepository Prescriptions => _prescriptions;
 
     public IGenericRepository<Branch>           Branches        => _branches        ??= new GenericRepository<Branch>(_context);
     public IGenericRepository<Service>          Services        => _services        ??= new GenericRepository<Service>(_context);
     public IGenericRepository<FAQ>              FAQs            => _faqs            ??= new GenericRepository<FAQ>(_context);
     public IGenericRepository<OfferDiscount>    OfferDiscounts  => _offerDiscounts  ??= new GenericRepository<OfferDiscount>(_context);
     public IGenericRepository<ContactMessage>   ContactMessages => _contactMessages ??= new GenericRepository<ContactMessage>(_context);
-
-    public IGenericRepository<Prescription>     Prescriptions     => _prescriptions     ??= new GenericRepository<Prescription>(_context);
     public IGenericRepository<PrescriptionItem> PrescriptionItems => _prescriptionItems ??= new GenericRepository<PrescriptionItem>(_context);
     public IGenericRepository<DentalChart>      DentalCharts      => _dentalCharts      ??= new GenericRepository<DentalChart>(_context);
     public IGenericRepository<ToothRecord>      ToothRecords      => _toothRecords      ??= new GenericRepository<ToothRecord>(_context);
@@ -103,6 +105,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IGenericRepository<Notification> Notifications => _notifications ??= new GenericRepository<Notification>(_context);
     public IGenericRepository<SystemLog>    SystemLogs    => _systemLogs    ??= new GenericRepository<SystemLog>(_context);
     public IGenericRepository<Revenue>      Revenues      => _revenues      ??= new GenericRepository<Revenue>(_context);
+    public IGenericRepository<DoctorNote>   DoctorNotes   => _doctorNotes   ??= new GenericRepository<DoctorNote>(_context);
 
     // ── Persistence ────────────────────────────────────────────────────────
     public Task<int> SaveChangesAsync(CancellationToken ct = default)

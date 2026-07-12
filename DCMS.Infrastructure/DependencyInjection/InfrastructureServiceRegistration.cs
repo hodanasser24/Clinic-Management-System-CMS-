@@ -49,6 +49,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
         services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
         // ── Unit of Work ───────────────────────────────────────────────────────
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();

@@ -1,4 +1,5 @@
 using DCMS.Application.DTOs.Prescriptions;
+using DCMS.Application.DTOs.Common;
 using DCMS.Application.Exceptions;
 using DCMS.Application.Interfaces;
 using DCMS.Domain.Entities;
@@ -18,17 +19,37 @@ public class PrescriptionService : IPrescriptionService
 
     public async Task<PrescriptionResponseDto> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var prescription = await _uow.Prescriptions.GetByIdAsync(id, ct);
+        var prescription = await _uow.Prescriptions.GetByIdWithItemsAsync(id, ct);
         if (prescription == null) throw new NotFoundException($"Prescription {id} not found.");
+        
+        // Ensure Report is loaded for MapToResponse
+        if (prescription.Report == null)
+            prescription.Report = await _uow.Reports.GetByIdAsync(prescription.ReportId, ct);
+            
         return MapToResponse(prescription);
     }
 
     public async Task<PrescriptionResponseDto> GetByReportIdAsync(int reportId, CancellationToken ct = default)
     {
-        var prescriptions = await _uow.Prescriptions.FindAsync(p => p.ReportId == reportId, ct);
-        var prescription = prescriptions.FirstOrDefault();
+        var prescription = await _uow.Prescriptions.GetByReportIdWithItemsAsync(reportId, ct);
         if (prescription == null) throw new NotFoundException($"No prescription found for report {reportId}.");
+        
+        if (prescription.Report == null)
+            prescription.Report = await _uow.Reports.GetByIdAsync(prescription.ReportId, ct);
+            
         return MapToResponse(prescription);
+    }
+
+    public async Task<PagedResultDto<PrescriptionResponseDto>> GetByPatientAsync(int patientId, int page, int pageSize, CancellationToken ct = default)
+    {
+        var pagedResult = await _uow.Prescriptions.GetByPatientWithDetailsAsync(patientId, page, pageSize, ct);
+        return new PagedResultDto<PrescriptionResponseDto>
+        {
+            TotalCount = pagedResult.TotalCount,
+            Page = pagedResult.Page,
+            PageSize = pagedResult.PageSize,
+            Items = pagedResult.Items.Select(MapToResponse).ToList()
+        };
     }
 
     public async Task<PrescriptionResponseDto> CreateAsync(CreatePrescriptionRequestDto dto, CancellationToken ct = default)
@@ -71,6 +92,8 @@ public class PrescriptionService : IPrescriptionService
     {
         Id = p.Id,
         ReportId = p.ReportId,
+        PatientId = p.Report?.PatientId ?? 0,
+        DoctorId = p.Report?.DoctorId ?? 0,
         GeneralInstructions = p.GeneralInstructions,
         Items = p.Items?.Select(i => new PrescriptionItemResponseDto
         {
@@ -129,7 +152,7 @@ public class PrescriptionService : IPrescriptionService
     /// </summary>
     public async Task<byte[]> ExportPdfAsync(int id, CancellationToken ct = default)
     {
-        var p = await _uow.Prescriptions.GetByIdAsync(id, ct)
+        var p = await _uow.Prescriptions.GetByIdWithItemsAsync(id, ct)
             ?? throw new NotFoundException($"Prescription {id} not found.");
 
         var sb = new StringBuilder();

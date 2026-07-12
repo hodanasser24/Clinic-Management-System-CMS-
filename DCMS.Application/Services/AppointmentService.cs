@@ -55,10 +55,10 @@ public class AppointmentService : IAppointmentService
     }
 
     public async Task<PagedResultDto<AppointmentSummaryDto>> GetByDoctorAsync(
-        int doctorId, int page, int pageSize, CancellationToken ct = default)
+        int doctorId, AppointmentQueryDto queryDto, CancellationToken ct = default)
     {
-        var paged = await _uow.Appointments.GetByDoctorWithDetailsAsync(doctorId, page, pageSize, ct);
-        return ToSummaryPaged(paged);
+        queryDto.DoctorId = doctorId; // Enforce doctor scope
+        return await GetAllAsync(queryDto, ct);
     }
 
     public async Task<PagedResultDto<AppointmentSummaryDto>> GetUrgentAsync(

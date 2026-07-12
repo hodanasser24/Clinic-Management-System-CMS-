@@ -44,3 +44,10 @@ export async function upsertToothRecord(patientId, data) {
     body: JSON.stringify(data),
   });
 }
+
+export async function bulkUpsertToothRecords(patientId, records) {
+  return fetchWithAuth(`/DentalChart/${patientId}/bulk`, {
+    method: "PUT",
+    body: JSON.stringify({ records }),
+  });
+}

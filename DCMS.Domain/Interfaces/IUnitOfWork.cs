@@ -35,7 +35,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Revenue>                     Revenues                        { get; }
 
     // ── Clinical module ────────────────────────────────────────────────────
-    IGenericRepository<Prescription>                Prescriptions                   { get; }
+    IPrescriptionRepository                         Prescriptions                   { get; }
     IGenericRepository<PrescriptionItem>            PrescriptionItems               { get; }
     IGenericRepository<DentalChart>                 DentalCharts                    { get; }
     IGenericRepository<ToothRecord>                 ToothRecords                    { get; }
@@ -50,6 +50,7 @@ public interface IUnitOfWork : IDisposable
     // ── Cross-cutting concerns ─────────────────────────────────────────────
     IGenericRepository<Notification>                Notifications                   { get; }
     IGenericRepository<SystemLog>                   SystemLogs                      { get; }
+    IGenericRepository<DoctorNote>                  DoctorNotes                     { get; }
 
     // ── Persistence ────────────────────────────────────────────────────────
     Task<int> SaveChangesAsync(CancellationToken ct = default);

@@ -70,7 +70,7 @@ public class DashboardController : ControllerBase
 
     /// <summary>Doctor's daily tracking dashboard.</summary>
     [HttpGet("doctor/daily")]
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Roles = "Doctor,Owner")]
     public async Task<IActionResult> DoctorDailyTracking(CancellationToken ct)
     {
         var doctorId = _currentUser.UserId;

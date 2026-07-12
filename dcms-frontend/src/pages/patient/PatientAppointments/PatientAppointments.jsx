@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentPatientId } from "../../../services/authServices";
+import { getUserId } from "../../../services/authServices";
 import {
   getPatientAppointments,
   cancelAppointment,
@@ -16,7 +16,7 @@ import "./PatientAppointments.css";
 
 function PatientAppointments() {
   const navigate = useNavigate();
-  const patientId = getCurrentPatientId();
+  const userId = getUserId();
 
   // Lists
   const [appointments, setAppointments] = useState([]);
@@ -56,7 +56,7 @@ function PatientAppointments() {
   const loadAppointments = async () => {
     setLoading(true);
     try {
-      const res = await getPatientAppointments(patientId);
+      const res = await getPatientAppointments(userId);
       setAppointments(res?.items || res || []);
     } catch (err) {
       console.error("Failed to load appointments:", err);
@@ -71,7 +71,7 @@ function PatientAppointments() {
     getBranches().then(setBranches).catch(console.error);
     getServices().then(setServices).catch(console.error);
     getDoctors().then(setDoctors).catch(console.error);
-  }, [patientId]);
+  }, [userId]);
 
   // Load slots when selection changes
   useEffect(() => {
@@ -105,7 +105,7 @@ function PatientAppointments() {
 
     try {
       await bookAppointment({
-        patientId,
+        patientId: userId,
         doctorId: parseInt(doctorId, 10),
         branchId: parseInt(branchId, 10),
         serviceId: parseInt(serviceId, 10),
@@ -343,8 +343,8 @@ function PatientAppointments() {
                     {loadingSlots ? "Loading slots..." : "Select Time"}
                   </option>
                   {availableSlots.map((slot, index) => (
-                    <option key={index} value={slot}>
-                      {slot}
+                    <option key={index} value={slot.startTime}>
+                      {slot.startTime} - {slot.endTime}
                     </option>
                   ))}
                 </select>

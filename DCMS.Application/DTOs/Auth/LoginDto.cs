@@ -27,6 +27,9 @@ public class RegisterPatientRequestDto
     public string  Phone          { get; set; } = null!;
     public DateOnly DateOfBirth   { get; set; }
     public string? MedicalHistory { get; set; }
+    public string? BloodType      { get; set; }
+    public string? Gender         { get; set; }
+    public string? Allergies      { get; set; }
 }
 
 public class ChangePasswordRequestDto

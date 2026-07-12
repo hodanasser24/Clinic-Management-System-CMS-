@@ -35,6 +35,17 @@ public class PrescriptionController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize(Roles = "Patient,Doctor,Admin,Owner")]
+    [HttpGet("by-patient/{patientId:int}")]
+    public async Task<IActionResult> GetByPatient(
+        int patientId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        var result = await _prescriptionService.GetByPatientAsync(patientId, page, pageSize, ct);
+        return Ok(result);
+    }
+
     /// <summary>
     /// Export prescription as a downloadable text/PDF file.
     /// Previously implemented in IPrescriptionService but no HTTP endpoint existed.

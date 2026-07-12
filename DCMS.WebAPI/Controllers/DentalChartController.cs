@@ -45,4 +45,13 @@ public class DentalChartController : ControllerBase
         var result = await _dentalChartService.UpsertToothRecordAsync(patientId, dto, doctorId, ct);
         return Ok(result);
     }
+
+    [Authorize(Roles = "Doctor")]
+    [HttpPut("{patientId:int}/bulk")]
+    public async Task<IActionResult> BulkUpsertToothRecords(int patientId, [FromBody] BulkUpsertToothRecordsRequestDto dto, CancellationToken ct)
+    {
+        var doctorId = GetUserId();
+        var result = await _dentalChartService.BulkUpsertToothRecordsAsync(patientId, dto, doctorId, ct);
+        return Ok(result);
+    }
 }

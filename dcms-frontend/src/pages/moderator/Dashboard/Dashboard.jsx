@@ -1,36 +1,45 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../../../services/apiClient";
 import "./Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
+  const [stats, setStats] = useState(null);
+  const [recentAppointments, setRecentAppointments] = useState([]);
+  const [recentPatients, setRecentPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const recentAppointments = [
-    {
-      id: 1,
-      patient: "Ahmed Ali",
-      doctor: "Dr. Sara",
-      time: "10:00 AM",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      patient: "Mona Hassan",
-      doctor: "Dr. Omar",
-      time: "11:30 AM",
-      status: "Completed",
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, appointmentsRes, patientsRes] = await Promise.all([
+          apiClient.get("/api/Dashboard/summary"),
+          apiClient.get("/api/Appointment?page=1&pageSize=5"),
+          apiClient.get("/api/patients/search?page=1&pageSize=5"),
+        ]);
+        setStats(statsRes.data);
+        setRecentAppointments(appointmentsRes.data.items || []);
+        setRecentPatients(patientsRes.data.items || []);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const recentPatients = [
-    { id: 1, name: "Ahmed Ali", phone: "01012345678", status: "Active" },
-    { id: 2, name: "Mona Hassan", phone: "01098765432", status: "Active" },
-  ];
+    fetchData();
+  }, []);
 
   const activities = [
     "New appointment created by Ahmed Ali",
     "Mona Hassan appointment marked as completed",
     "New patient profile added",
   ];
+
+  if (loading) {
+    return <div className="dashboard-page">Loading...</div>;
+  }
 
   return (
     <div className="dashboard-page">
@@ -48,19 +57,19 @@ function Dashboard() {
       <div className="stats-cards">
         <div className="stat-card">
           <h3>Today's Appointments</h3>
-          <span>32</span>
+          <span>{stats?.totalAppointmentsToday || 0}</span>
         </div>
         <div className="stat-card">
           <h3>Patients Today</h3>
-          <span>18</span>
+          <span>{stats?.totalPatients || 0}</span>
         </div>
         <div className="stat-card">
           <h3>Completed</h3>
-          <span>24</span>
+          <span>{stats?.confirmedAppointments || 0}</span>
         </div>
         <div className="stat-card">
           <h3>Cancelled</h3>
-          <span>3</span>
+          <span>0</span>
         </div>
       </div>
 
@@ -77,30 +86,38 @@ function Dashboard() {
       <div className="dashboard-grid">
         <div className="dashboard-section">
           <h2>Recent Appointments</h2>
-          {recentAppointments.map((item) => (
-            <div className="mini-row" key={item.id}>
-              <div>
-                <strong>{item.patient}</strong>
-                <p>
-                  {item.doctor} • {item.time}
-                </p>
+          {recentAppointments.length > 0 ? (
+            recentAppointments.map((item) => (
+              <div className="mini-row" key={item.id}>
+                <div>
+                  <strong>{item.patientName}</strong>
+                  <p>
+                    {item.doctorName} • {item.startTime}
+                  </p>
+                </div>
+                <span>{item.status}</span>
               </div>
-              <span>{item.status}</span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p>No recent appointments.</p>
+          )}
         </div>
 
         <div className="dashboard-section">
           <h2>Recent Patients</h2>
-          {recentPatients.map((item) => (
-            <div className="mini-row" key={item.id}>
-              <div>
-                <strong>{item.name}</strong>
-                <p>{item.phone}</p>
+          {recentPatients.length > 0 ? (
+            recentPatients.map((item) => (
+              <div className="mini-row" key={item.id}>
+                <div>
+                  <strong>{item.fullName}</strong>
+                  <p>{item.phone}</p>
+                </div>
+                <span>{item.isActive ? "Active" : "Inactive"}</span>
               </div>
-              <span>{item.status}</span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p>No recent patients.</p>
+          )}
         </div>
       </div>
 

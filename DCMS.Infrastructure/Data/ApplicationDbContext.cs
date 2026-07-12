@@ -49,6 +49,7 @@ public class ApplicationDbContext : DbContext, IAppDbContext
     public DbSet<DentalChart>                       DentalCharts                        => Set<DentalChart>();
     public DbSet<ToothRecord>                       ToothRecords                        => Set<ToothRecord>();
     public DbSet<Revenue>                           Revenues                            => Set<Revenue>();
+    public DbSet<DoctorNote>                        DoctorNotes                         => Set<DoctorNote>();
 
     // ── FIX-1: Timestamp management ───────────────────────────────────────
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -101,6 +102,7 @@ public class ApplicationDbContext : DbContext, IAppDbContext
         ConfigureContactMessage(modelBuilder);
         ConfigureServiceFaqBranch(modelBuilder);
         ConfigureRevenue(modelBuilder);
+        ConfigureDoctorNote(modelBuilder);
     }
 
     // ── USER HIERARCHY (TPH) ──────────────────────────────────────────────
@@ -548,6 +550,18 @@ public class ApplicationDbContext : DbContext, IAppDbContext
              .HasForeignKey(r => r.ServiceId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(r => r.Patient).WithMany()
              .HasForeignKey(r => r.PatientId).OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    // ── DOCTOR NOTE ───────────────────────────────────────────────────────
+    private static void ConfigureDoctorNote(ModelBuilder mb)
+    {
+        mb.Entity<DoctorNote>(e =>
+        {
+            e.HasKey(dn => dn.Id);
+            e.Property(dn => dn.Content).IsRequired().HasMaxLength(2000);
+            e.HasOne(dn => dn.Doctor).WithMany(d => d.DoctorNotes)
+             .HasForeignKey(dn => dn.DoctorId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

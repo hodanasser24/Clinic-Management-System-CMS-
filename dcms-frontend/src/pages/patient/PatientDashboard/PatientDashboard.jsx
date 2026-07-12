@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentPatientId, getCurrentPatientName } from "../../../services/authServices";
+import { getUserId, getUserName } from "../../../services/authServices";
 import { getPatientProfile } from "../../../services/profileServices";
 import { getUpcomingPatientAppointments, getHistoryPatientAppointments } from "../../../services/appointmentServices";
 import { getNotifications } from "../../../services/notificationServices";
@@ -8,7 +8,7 @@ import "./PatientDashboard.css";
 
 function PatientDashboard() {
   const navigate = useNavigate();
-  const patientId = getCurrentPatientId();
+  const userId = getUserId();
   const [profile, setProfile] = useState(null);
   const [upcoming, setUpcoming] = useState([]);
   const [historyCount, setHistoryCount] = useState(0);
@@ -20,8 +20,8 @@ function PatientDashboard() {
       try {
         const [profileData, upcomingData, historyData, notificationsData] = await Promise.all([
           getPatientProfile(),
-          getUpcomingPatientAppointments(patientId, { page: 1, pageSize: 5 }),
-          getHistoryPatientAppointments(patientId, { page: 1, pageSize: 1 }),
+          getUpcomingPatientAppointments(userId, { page: 1, pageSize: 5 }),
+          getHistoryPatientAppointments(userId, { page: 1, pageSize: 1 }),
           getNotifications({ unreadOnly: true }).catch(() => ({ unreadCount: 0 }))
         ]);
         setProfile(profileData);
@@ -35,9 +35,9 @@ function PatientDashboard() {
       }
     }
     loadDashboardData();
-  }, [patientId]);
+  }, [userId]);
 
-  const welcomeName = profile?.fullName || getCurrentPatientName();
+  const welcomeName = profile?.fullName || getUserName();
   const nextAppt = upcoming[0];
 
   return (
@@ -114,15 +114,21 @@ function PatientDashboard() {
               <p>
                 <strong>Date of Birth:</strong> {profile?.dateOfBirth || "Not specified"}
               </p>
-
+              <p>
+                <strong>Gender:</strong> {profile?.gender || "Not specified"}
+              </p>
+              <p>
+                <strong>Blood Type:</strong> {profile?.bloodType || "Not specified"}
+              </p>
+              <p>
+                <strong>Allergies:</strong> {profile?.allergies || "None specified"}
+              </p>
               <p>
                 <strong>Contact Phone:</strong> {profile?.phone || "Not specified"}
               </p>
-
               <p>
                 <strong>Email Address:</strong> {profile?.email || "Not specified"}
               </p>
-
               <p>
                 <strong>Medical History:</strong> {profile?.medicalHistory || "None specified"}
               </p>

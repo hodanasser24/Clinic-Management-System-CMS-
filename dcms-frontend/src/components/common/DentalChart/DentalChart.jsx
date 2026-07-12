@@ -111,7 +111,7 @@ const PREVIEW_TOOTH_GEOMETRY = {
   },
 };
 
-import { getPatientDentalChart, updateChartNotes, upsertToothRecord } from "../../../services/dentalChartServices";
+import { getPatientDentalChart, updateChartNotes, upsertToothRecord, bulkUpsertToothRecords } from "../../../services/dentalChartServices";
 
 const backendToFrontendStatus = (status) => {
   switch (status) {
@@ -166,6 +166,12 @@ function DentalChart({ patientId, readOnly = false }) {
   const [patientName, setPatientName] = useState("Patient");
   const [loading, setLoading] = useState(true);
 
+  // Persistence and edit states
+  const [pendingToothChanges, setPendingToothChanges] = useState({});
+  const [originalNotes, setOriginalNotes] = useState("");
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null); // "saving", "saveSuccess", "saveError"
+
   // Grouped transform state to enforce synchronous batching
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -183,10 +189,15 @@ function DentalChart({ patientId, readOnly = false }) {
       .then((data) => {
         setPatientName(data.patientName || "Patient");
         setChartNotes(data.notes || "");
+        setOriginalNotes(data.notes || "");
+        setPendingToothChanges({});
         const statusMap = {};
         if (data.toothRecords) {
           data.toothRecords.forEach((record) => {
-            statusMap[record.toothNumber] = backendToFrontendStatus(record.toothStatus);
+            const fdi = Object.keys(fdiToUniversal).find(key => fdiToUniversal[key] === record.toothNumber);
+            if (fdi) {
+              statusMap[fdi] = backendToFrontendStatus(record.toothStatus);
+            }
           });
         }
         setToothStatus(statusMap);
@@ -207,6 +218,55 @@ function DentalChart({ patientId, readOnly = false }) {
   const changeStatus = (status) => {
     if (readOnly || !selectedTooth) return;
     setToothStatus((prev) => ({ ...prev, [selectedTooth]: status }));
+    setPendingToothChanges((prev) => ({ ...prev, [selectedTooth]: status }));
+  };
+
+  const handleSave = async () => {
+    if (readOnly) return;
+    setSaveStatus("saving");
+    try {
+      const recordsToUpdate = Object.entries(pendingToothChanges).map(([fdiTooth, status]) => {
+        const uniTooth = fdiToUniversal[fdiTooth];
+        return {
+          toothNumber: uniTooth,
+          toothStatus: frontendToBackendStatus(status),
+          treatmentType: null,
+          treatmentDate: null,
+          notes: null,
+          lastUpdatedInReportId: null
+        };
+      });
+
+      if (recordsToUpdate.length > 0) {
+        await bulkUpsertToothRecords(patientId, recordsToUpdate);
+      }
+
+      if (chartNotes !== originalNotes) {
+        await updateChartNotes(patientId, chartNotes);
+        setOriginalNotes(chartNotes);
+      }
+
+      setSaveStatus("saveSuccess");
+      setPendingToothChanges({});
+      
+      const data = await getPatientDentalChart(patientId);
+      const statusMap = {};
+      if (data.toothRecords) {
+        data.toothRecords.forEach((record) => {
+          const fdi = Object.keys(fdiToUniversal).find(key => fdiToUniversal[key] === record.toothNumber);
+          if (fdi) {
+            statusMap[fdi] = backendToFrontendStatus(record.toothStatus);
+          }
+        });
+      }
+      setToothStatus(statusMap);
+      
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (err) {
+      console.error("Failed to save dental chart:", err);
+      setSaveStatus("saveError");
+      setTimeout(() => setSaveStatus(null), 3000);
+    }
   };
 
   const toothColor = (tooth) => {
@@ -700,9 +760,19 @@ function DentalChart({ patientId, readOnly = false }) {
 
           <h4>Notes</h4>
           <div className="notes-box">
-            <span>No notes added</span>
-            {!readOnly && (
-              <button type="button" className="notes-edit-btn">
+            {isEditingNotes ? (
+              <textarea
+                value={chartNotes}
+                onChange={(e) => setChartNotes(e.target.value)}
+                onBlur={() => setIsEditingNotes(false)}
+                autoFocus
+                style={{ width: "100%", minHeight: "60px", background: "transparent", border: "1px solid #ffffff33", color: "inherit", padding: "4px", borderRadius: "4px", outline: "none", resize: "vertical" }}
+              />
+            ) : (
+              <span>{chartNotes || "No notes added"}</span>
+            )}
+            {!readOnly && !isEditingNotes && (
+              <button type="button" className="notes-edit-btn" onClick={() => setIsEditingNotes(true)}>
                 <svg
                   width="14"
                   height="14"
@@ -749,21 +819,36 @@ function DentalChart({ patientId, readOnly = false }) {
                 })}
               </div>
 
-              <button className="save-btn">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  style={{ marginRight: "8px", verticalAlign: "middle" }}
-                >
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                  <polyline points="17 21 17 13 7 13 7 21" />
-                  <polyline points="7 3 7 8 15 8" />
-                </svg>
-                Save Changes
+              <button 
+                className={`save-btn ${saveStatus === "saveSuccess" ? "success" : saveStatus === "saveError" ? "error" : ""}`} 
+                onClick={handleSave}
+                disabled={saveStatus === "saving" || (Object.keys(pendingToothChanges).length === 0 && chartNotes === originalNotes)}
+                style={saveStatus === "saveSuccess" ? { background: "#10b981", color: "white" } : saveStatus === "saveError" ? { background: "#ef4444", color: "white" } : {}}
+              >
+                {saveStatus === "saving" ? (
+                  "Saving..."
+                ) : saveStatus === "saveSuccess" ? (
+                  "Saved"
+                ) : saveStatus === "saveError" ? (
+                  "Error"
+                ) : (
+                  <>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      style={{ marginRight: "8px", verticalAlign: "middle" }}
+                    >
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                      <polyline points="17 21 17 13 7 13 7 21" />
+                      <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Save Changes
+                  </>
+                )}
               </button>
             </>
           )}

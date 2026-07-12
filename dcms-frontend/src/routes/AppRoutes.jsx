@@ -45,6 +45,7 @@ import Prescriptions from "../pages/doctor/Prescriptions/Prescriptions";
 import DoctorReports from "../pages/doctor/Reports/Reports";
 import DoctorNotifications from "../pages/doctor/Notifications/Notifications";
 import DoctorProfile from "../pages/doctor/Profile/Profile";
+import StaffManagement from "../pages/doctor/StaffManagement/StaffManagement";
 
 function AppRoutes() {
   return (
@@ -313,6 +314,15 @@ function AppRoutes() {
           element={
             <DashboardLayout>
               <DoctorProfile />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/doctor/staff"
+          element={
+            <DashboardLayout>
+              <StaffManagement />
             </DashboardLayout>
           }
         />

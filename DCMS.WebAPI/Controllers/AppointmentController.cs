@@ -86,10 +86,10 @@ public class AppointmentController : ControllerBase
     [HttpGet("by-doctor/{doctorId:int}")]
     public async Task<IActionResult> GetByDoctor(
         int doctorId,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] AppointmentQueryDto query,
         CancellationToken ct = default)
     {
-        var result = await _appointmentService.GetByDoctorAsync(doctorId, page, pageSize, ct);
+        var result = await _appointmentService.GetByDoctorAsync(doctorId, query, ct);
         return Ok(result);
     }
 
@@ -146,11 +146,19 @@ public class AppointmentController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Patient,Admin")]
+    [Authorize(Roles = "Patient,Owner")]
     [HttpPut("{id:int}/cancel")]
     public async Task<IActionResult> Cancel(
         int id, [FromBody] CancelAppointmentRequestDto dto, CancellationToken ct)
     {
+        Console.WriteLine("=== CANCEL ENDPOINT HIT ===");
+        Console.WriteLine($"IsAuthenticated: {User.Identity?.IsAuthenticated}");
+        Console.WriteLine($"IsInRole(Owner): {User.IsInRole("Owner")}");
+        Console.WriteLine($"IsInRole(Doctor): {User.IsInRole("Doctor")}");
+        Console.WriteLine($"IsInRole(Admin): {User.IsInRole("Admin")}");
+        Console.WriteLine($"Claims: {string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+        Console.WriteLine("===========================");
+
         var result = await _appointmentService.CancelAsync(id, GetUserId(), dto, ct);
         return Ok(result);
     }

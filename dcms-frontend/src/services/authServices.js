@@ -19,8 +19,8 @@ export async function login(data) {
   // Store authentication data exactly as required
   localStorage.setItem("token", result.accessToken);
   localStorage.setItem("refreshToken", result.refreshToken);
-  localStorage.setItem("patientId", result.userId); // userId serves as patientId for patient endpoints
-  localStorage.setItem("patientName", result.fullName);
+  localStorage.setItem("userId", result.userId);
+  localStorage.setItem("userName", result.fullName);
   localStorage.setItem("email", result.email);
   localStorage.setItem("role", result.role); // 0 or "Patient" depending on backend serialization
   
@@ -91,19 +91,23 @@ export async function logout() {
   // Always clean up locally
   localStorage.removeItem("token");
   localStorage.removeItem("refreshToken");
-  localStorage.removeItem("patientId");
-  localStorage.removeItem("patientName");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("userName");
   localStorage.removeItem("email");
   localStorage.removeItem("role");
 }
 
-export function getCurrentPatientId() {
-  const storedId = localStorage.getItem("patientId");
+export function getUserId() {
+  const storedId = localStorage.getItem("userId");
   return storedId ? parseInt(storedId, 10) : 1; 
 }
 
-export function getCurrentPatientName() {
-  return localStorage.getItem("patientName") || "Patient";
+export function setUserId(id) {
+  localStorage.setItem("userId", id);
+}
+
+export function getUserName() {
+  return localStorage.getItem("userName") || "User";
 }
 
 export function getAuthToken() {

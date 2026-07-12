@@ -42,6 +42,21 @@ export async function getPatientAppointments(patientId, params = {}) {
   return fetchWithAuth(`/Appointment/by-patient/${patientId}${queryString}`);
 }
 
+export async function getDoctorAppointments(doctorId, params = {}) {
+  const query = new URLSearchParams();
+  
+  if (params.page) query.append("page", params.page);
+  if (params.pageSize) query.append("pageSize", params.pageSize);
+  if (params.status !== undefined && params.status !== "") query.append("status", params.status);
+  if (params.fromDate) query.append("fromDate", params.fromDate);
+  if (params.toDate) query.append("toDate", params.toDate);
+  if (params.sortBy) query.append("sortBy", params.sortBy);
+  query.append("sortDescending", "true");
+
+  const queryString = query.toString() ? `?${query.toString()}` : "";
+  return fetchWithAuth(`/Appointment/by-doctor/${doctorId}${queryString}`);
+}
+
 export async function getAppointmentById(id) {
   return fetchWithAuth(`/Appointment/${id}`);
 }

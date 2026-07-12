@@ -1,0 +1,151 @@
+.staff-page {
+  padding: 30px;
+}
+
+.staff-header {
+  margin-bottom: 26px;
+}
+
+.staff-header h1 {
+  color: white;
+  font-size: 30px;
+}
+
+.staff-header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.staff-tabs {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 10px;
+}
+
+.staff-tabs button {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px 0;
+  position: relative;
+}
+
+.staff-tabs button.active {
+  color: white;
+}
+
+.staff-tabs button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -11px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #2563eb;
+}
+
+.staff-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.add-staff-btn {
+  border: 0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2f6bff, #6d3df5);
+}
+
+.staff-page .data-table-wrapper {
+  margin-top: 20px;
+}
+
+/* Modals */
+.staff-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.staff-modal {
+  background: #1e293b;
+  padding: 30px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #334155;
+}
+
+.staff-modal h2 {
+  color: white;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.staff-modal .form-group {
+  margin-bottom: 15px;
+}
+
+.staff-modal .form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.staff-modal .form-group input {
+  width: 100%;
+  padding: 10px 15px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: white;
+}
+
+.staff-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.staff-modal-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.staff-modal-actions .cancel-btn {
+  background: #334155;
+  color: white;
+}
+
+.staff-modal-actions .save-btn {
+  background: #2563eb;
+  color: white;
+}
+
+.staff-modal-actions .delete-btn {
+  background: #ef4444;
+  color: white;
+}

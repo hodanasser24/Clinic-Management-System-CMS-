@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getAppointmentById, cancelAppointment, markAttendance } from "../../../services/appointmentServices";
+import CancelModal from "../../../components/ui/CancelModal/CancelModal";
 import "./AppointmentDetails.css";
 
 function AppointmentDetails() {
@@ -9,6 +10,7 @@ function AppointmentDetails() {
   const [appointment, setAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   const loadData = async () => {
     try {
@@ -27,11 +29,14 @@ function AppointmentDetails() {
     loadData();
   }, [id]);
 
-  const handleCancel = async () => {
-    const reason = window.prompt("Reason for cancellation?");
-    if (reason === null) return;
+  const initiateCancel = () => {
+    setCancelModalOpen(true);
+  };
+
+  const handleCancel = async (reason) => {
     try {
-      await cancelAppointment(id, { reason: reason || "Cancelled by doctor" });
+      await cancelAppointment(id, reason);
+      setCancelModalOpen(false);
       loadData();
     } catch (err) {
       alert("Failed to cancel: " + err.message);
@@ -111,9 +116,15 @@ function AppointmentDetails() {
           + Add Prescription
         </button>
         {["Pending", "Confirmed"].includes(appointment.status) && (
-          <button className="danger" onClick={handleCancel}>Cancel Appointment</button>
+          <button className="danger" onClick={initiateCancel}>Cancel Appointment</button>
         )}
       </div>
+
+      <CancelModal
+        isOpen={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        onConfirm={handleCancel}
+      />
     </div>
   );
 }

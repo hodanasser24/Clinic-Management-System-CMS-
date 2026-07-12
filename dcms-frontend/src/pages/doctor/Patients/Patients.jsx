@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import SearchInput from "../../../components/common/SearchInput/SearchInput";
 import FilterDropdown from "../../../components/common/FilterDropdown/FilterDropdown";
 import SortDropdown from "../../../components/common/SortDropdown/SortDropdown";
 import DataTable from "../../../components/common/DataTable/DataTable";
 import Pagination from "../../../components/common/Pagination/Pagination";
+import apiClient from "../../../services/apiClient";
 import "./Patients.css";
 
 function Patients() {
@@ -12,77 +13,74 @@ function Patients() {
 
   const columns = [
     { key: "name", label: "Patient" },
-    { key: "age", label: "Age" },
+    { key: "email", label: "Email" },
     { key: "phone", label: "Phone" },
-    { key: "lastVisit", label: "Last Visit" },
+    { key: "lastVisit", label: "Joined" },
     { key: "status", label: "Status" },
   ];
 
-  const [patients] = useState([
-    {
-      id: 1,
-      name: "Ahmed Ali",
-      age: 24,
-      phone: "01012345678",
-      lastVisit: "05 Jul 2026",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Mona Hassan",
-      age: 29,
-      phone: "01098765432",
-      lastVisit: "04 Jul 2026",
-      status: "Follow Up",
-    },
-    {
-      id: 3,
-      name: "Omar Mohamed",
-      age: 31,
-      phone: "01055555555",
-      lastVisit: "02 Jul 2026",
-      status: "Active",
-    },
-  ]);
+  const [patients, setPatients] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   // States
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  // 1. Search Query Filter
-  let filtered = patients.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.phone.includes(searchQuery)
-  );
+  const fetchPatients = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage,
+        pageSize: itemsPerPage,
+      });
 
-  // 2. Status Dropdown Filter
-  if (statusFilter) {
-    filtered = filtered.filter((p) => {
-      const matchVal = statusFilter === "followup" ? "Follow Up" : "Active";
-      return p.status === matchVal;
-    });
-  }
+      if (searchQuery) {
+        if (/^\d+$/.test(searchQuery)) {
+          params.append("PhoneNumber", searchQuery);
+        } else {
+          params.append("FullName", searchQuery);
+        }
+      }
 
-  // 3. Sorting
-  if (sortBy === "az") {
-    filtered.sort((a, b) => a.name.localeCompare(b.name));
-  } else if (sortBy === "newest") {
-    filtered.sort((a, b) => b.id - a.id);
-  } else if (sortBy === "oldest") {
-    filtered.sort((a, b) => a.id - b.id);
-  }
+      if (sortBy === "az") {
+        params.append("SortBy", "FullName");
+        params.append("SortDescending", "false");
+      } else if (sortBy === "newest") {
+        params.append("SortBy", "CreatedAt");
+        params.append("SortDescending", "true");
+      } else if (sortBy === "oldest") {
+        params.append("SortBy", "CreatedAt");
+        params.append("SortDescending", "false");
+      }
 
-  // 4. Pagination
-  const itemsPerPage = 2;
-  const totalPages = Math.max(Math.ceil(filtered.length / itemsPerPage), 1);
-  const activePage = Math.min(currentPage, totalPages);
-  const paginatedData = filtered.slice(
-    (activePage - 1) * itemsPerPage,
-    activePage * itemsPerPage
-  );
+      const response = await apiClient.get(`/api/patients/search?${params.toString()}`);
+      
+      const mappedData = (response.data.items || response.data.Items || []).map(p => ({
+        id: p.id,
+        name: p.fullName || "N/A",
+        email: p.email || "N/A",
+        phone: p.phone || "N/A",
+        lastVisit: new Date(p.createdAt).toLocaleDateString(),
+        status: p.isActive ? "Active" : "Inactive"
+      }));
+
+      setPatients(mappedData);
+      setTotalCount(response.data.totalCount || 0);
+    } catch (err) {
+      console.error("Failed to fetch patients", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, searchQuery, sortBy]);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  const totalPages = Math.max(Math.ceil(totalCount / itemsPerPage), 1);
 
   return (
     <div className="doctor-patients-page">
@@ -95,28 +93,15 @@ function Patients() {
 
       <div className="doctor-patients-toolbar">
         <SearchInput
-          placeholder="Search patient..."
+          placeholder="Search name or phone..."
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
-            setCurrentPage(1);
           }}
           onSearch={() => setCurrentPage(1)}
         />
 
-        <FilterDropdown
-          label="Status"
-          value={statusFilter}
-          onChange={(val) => {
-            setStatusFilter(val);
-            setCurrentPage(1);
-          }}
-          options={[
-            { value: "", label: "All Status" },
-            { value: "active", label: "Active" },
-            { value: "followup", label: "Follow Up" },
-          ]}
-        />
+        {/* Removed Status Filter dropdown as backend search doesn't support IsActive filter currently */}
 
         <SortDropdown
           value={sortBy}
@@ -126,38 +111,44 @@ function Patients() {
           }}
           options={[
             { value: "", label: "Sort By" },
-            { value: "newest", label: "Newest Visit" },
-            { value: "oldest", label: "Oldest Visit" },
+            { value: "newest", label: "Newest Join" },
+            { value: "oldest", label: "Oldest Join" },
             { value: "az", label: "Name A-Z" },
           ]}
         />
       </div>
 
-      <DataTable
-        columns={columns}
-        data={paginatedData}
-        actions={(row) => (
-          <div className="doctor-patient-actions">
-            <button onClick={() => navigate(`/doctor/patients/${row.id}`)}>
-              View
-            </button>
+      {loading ? (
+        <p>Loading patients...</p>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={patients}
+          actions={(row) => (
+            <div className="doctor-patient-actions">
+              <button onClick={() => navigate(`/doctor/patients/${row.id}`)}>
+                View
+              </button>
 
-            <button onClick={() => navigate("/doctor/medical-records")}>
-              Records
-            </button>
+              <button onClick={() => navigate("/doctor/medical-records", { state: { patientId: row.id } })}>
+                Records
+              </button>
 
-            <button onClick={() => navigate("/doctor/prescriptions")}>
-              Prescription
-            </button>
-          </div>
-        )}
-      />
+              <button onClick={() => navigate("/doctor/prescriptions", { state: { patientId: row.id } })}>
+                Prescription
+              </button>
+            </div>
+          )}
+        />
+      )}
 
-      <Pagination
-        currentPage={activePage}
-        totalPages={totalPages}
-        onPageChange={(page) => setCurrentPage(page)}
-      />
+      {!loading && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      )}
     </div>
   );
 }

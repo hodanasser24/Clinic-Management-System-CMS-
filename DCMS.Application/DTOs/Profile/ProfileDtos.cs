@@ -6,6 +6,9 @@ public class UpdatePatientProfileRequestDto
     public string? Phone { get; set; }
     public DateOnly DateOfBirth { get; set; }
     public string? MedicalHistory { get; set; }
+    public string? BloodType { get; set; }
+    public string? Gender { get; set; }
+    public string? Allergies { get; set; }
 }
 
 public class UpdateDoctorSelfProfileRequestDto
@@ -31,6 +34,9 @@ public class PatientProfileResponseDto
     public string? Phone { get; set; }
     public DateOnly DateOfBirth { get; set; }
     public string? MedicalHistory { get; set; }
+    public string? BloodType { get; set; }
+    public string? Gender { get; set; }
+    public string? Allergies { get; set; }
     public bool IsFirstLogin { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }

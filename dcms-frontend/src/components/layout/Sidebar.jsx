@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 
 function Sidebar() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [supportForm, setSupportForm] = useState({ subject: "", message: "" });
   const [supportSent, setSupportSent] = useState(false);
@@ -16,6 +17,9 @@ function Sidebar() {
   if (isDoctor) title = "Doctor Portal";
   if (isPatient) title = "Patient Portal";
 
+  const role = localStorage.getItem("role");
+  const isOwner = role === "Owner";
+
   const links = isDoctor
     ? [
         ["🏠 Dashboard", "/doctor/dashboard"],
@@ -26,6 +30,7 @@ function Sidebar() {
         ["📊 Reports", "/doctor/reports"],
         ["🔔 Notifications", "/doctor/notifications"],
         ["👤 Profile", "/doctor/profile"],
+        ...(isOwner ? [["👥 Staff Management", "/doctor/staff"]] : []),
       ]
     : isPatient
       ? [
@@ -85,7 +90,7 @@ function Sidebar() {
           onClick={async () => {
             const { logout } = await import("../../services/authServices");
             await logout();
-            window.location.href = "/login";
+            navigate("/login", { replace: true });
           }}
           style={{ marginTop: "1rem", backgroundColor: "rgba(239, 71, 111, 0.1)", color: "#ef476f", border: "none", padding: "0.75rem", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
         >

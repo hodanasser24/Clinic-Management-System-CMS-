@@ -34,6 +34,9 @@ public class ProfileService : IProfileService
         patient.Phone = dto.Phone;
         patient.DateOfBirth = dto.DateOfBirth;
         patient.MedicalHistory = dto.MedicalHistory;
+        patient.BloodType = dto.BloodType;
+        patient.Gender = dto.Gender;
+        patient.Allergies = dto.Allergies;
 
         await _uow.SaveChangesAsync(ct);
         return _mapper.Map<PatientProfileResponseDto>(patient);
