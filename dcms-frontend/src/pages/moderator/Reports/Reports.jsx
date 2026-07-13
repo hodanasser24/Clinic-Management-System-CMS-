@@ -1,23 +1,44 @@
 import { useState, useEffect } from "react";
 import apiClient from "../../../services/apiClient";
+import DataTable from "../../../components/common/DataTable/DataTable";
 import "./Reports.css";
 
 function Reports() {
   const [summary, setSummary] = useState(null);
+  const [dailyReports, setDailyReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchSummary = async () => {
+    const fetchData = async () => {
       try {
-        const res = await apiClient.get("/api/Dashboard/summary");
-        setSummary(res.data);
+        setLoading(true);
+        setError("");
+        const today = new Date().toISOString().split("T")[0];
+        const [summaryRes, dailyRes] = await Promise.all([
+          apiClient.get("/api/Dashboard/summary"),
+          apiClient.get(`/api/Dashboard/daily?date=${today}`)
+        ]);
+        setSummary(summaryRes.data);
+        setDailyReports((dailyRes.data.appointments || []).map(a => ({ ...a, id: a.appointmentId })));
       } catch (err) {
-        console.error("Failed to fetch dashboard summary", err);
+        console.error("Failed to fetch reports", err);
+        const errData = err.response?.data;
+        let msg = "Failed to load reports.";
+        if (errData) {
+          if (errData.errors) msg = Object.values(errData.errors).flat().join("\n");
+          else if (errData.message) msg = errData.message;
+          else if (errData.detail) msg = errData.detail;
+          else if (typeof errData === "string") msg = errData;
+        } else if (err.message) {
+          msg = err.message;
+        }
+        setError(msg);
       } finally {
         setLoading(false);
       }
     };
-    fetchSummary();
+    fetchData();
   }, []);
 
   const handleExportPDF = async () => {
@@ -27,15 +48,35 @@ function Reports() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `daily-report-${today}.csv`);
+      
+      let filename = `daily-report-${today}.csv`;
+      const disposition = res.headers['content-disposition'];
+      if (disposition && disposition.indexOf('filename=') !== -1) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+      
+      link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
     } catch (err) {
       console.error("Failed to export report", err);
-      alert("Failed to export report.");
+      const errData = err.response?.data;
+      alert(errData?.message || errData?.detail || "Failed to export report.");
     }
   };
+
+  const columns = [
+    { key: "appointmentId", label: "Appointment ID" },
+    { key: "patientName", label: "Patient" },
+    { key: "doctorName", label: "Doctor" },
+    { key: "startTime", label: "Date / Time" },
+    { key: "status", label: "Status" },
+    { key: "serviceName", label: "Medical Info (Service)" }
+  ];
 
   return (
     <div className="reports-page">
@@ -48,33 +89,47 @@ function Reports() {
         <button onClick={handleExportPDF}>Export CSV</button>
       </div>
 
+      {error && <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>}
+
       {loading ? (
         <p>Loading reports...</p>
       ) : (
-        <div className="report-cards">
-          <div className="report-card">
-            <h3>Today's Appointments</h3>
-            <span>{summary?.todayAppointments ?? summary?.totalAppointments ?? 0}</span>
+        <>
+          <div className="report-cards">
+            <div className="report-card">
+              <h3>Today's Appointments</h3>
+              <span>{summary?.totalAppointmentsToday ?? summary?.todayAppointments ?? 0}</span>
+            </div>
+
+            <div className="report-card">
+              <h3>Completed</h3>
+              <span>{summary?.confirmedAppointments ?? summary?.completedAppointments ?? 0}</span>
+            </div>
+
+            <div className="report-card">
+              <h3>Pending</h3>
+              <span>{dailyReports.filter(a => a.status === "Pending").length}</span>
+            </div>
+
+            <div className="report-card">
+              <h3>Revenue</h3>
+              <span>{summary?.todayRevenue ?? summary?.totalRevenue ?? 0} EGP</span>
+            </div>
           </div>
 
-          <div className="report-card">
-            <h3>Completed</h3>
-            <span>{summary?.completedAppointments ?? 0}</span>
+          <div className="dashboard-section" style={{ marginTop: '2rem' }}>
+            <h2>Daily Report Details</h2>
+            {dailyReports.length > 0 ? (
+              <DataTable
+                columns={columns}
+                data={dailyReports}
+              />
+            ) : (
+              <p>No reports available for today.</p>
+            )}
           </div>
-
-          <div className="report-card">
-            <h3>Cancelled</h3>
-            <span>{summary?.cancelledAppointments ?? 0}</span>
-          </div>
-
-          <div className="report-card">
-            <h3>Revenue</h3>
-            <span>{summary?.totalRevenue ?? 0} EGP</span>
-          </div>
-        </div>
+        </>
       )}
-
-      <div className="chart-placeholder">Charts will be connected later.</div>
     </div>
   );
 }

@@ -9,7 +9,6 @@ public class CreateReportValidator : AbstractValidator<CreateReportRequestDto>
     {
         RuleFor(x => x.AppointmentId).GreaterThan(0).WithMessage("AppointmentId must be a valid ID.");
         RuleFor(x => x.PatientId).GreaterThan(0).WithMessage("PatientId must be a valid ID.");
-        RuleFor(x => x.DoctorId).GreaterThan(0).WithMessage("DoctorId must be a valid ID.");
         // BR-41: Diagnosis max 2000
         RuleFor(x => x.Diagnosis)
             .NotEmpty().WithMessage("Diagnosis is required.")

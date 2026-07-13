@@ -14,7 +14,7 @@ public class DentalChartService : IDentalChartService
 
     public async Task<DentalChartResponseDto> GetByPatientIdAsync(int patientId, CancellationToken ct = default)
     {
-        var charts = await _uow.DentalCharts.FindAsync(dc => dc.PatientId == patientId, ct);
+        var charts = await _uow.DentalCharts.FindTrackedAsync(dc => dc.PatientId == patientId, ct);
         var chart = charts.FirstOrDefault();
         if (chart == null)
         {
@@ -39,7 +39,7 @@ public class DentalChartService : IDentalChartService
         var doctor = await _uow.Doctors.GetByIdAsync(requestingDoctorId, ct);
         if (doctor == null) throw new ForbiddenException("Only doctors can update dental charts.");
 
-        var charts = await _uow.DentalCharts.FindAsync(dc => dc.PatientId == patientId, ct);
+        var charts = await _uow.DentalCharts.FindTrackedAsync(dc => dc.PatientId == patientId, ct);
         var chart = charts.FirstOrDefault();
 
         if (chart == null)
@@ -61,8 +61,9 @@ public class DentalChartService : IDentalChartService
     {
         var doctor = await _uow.Doctors.GetByIdAsync(requestingDoctorId, ct);
         if (doctor == null) throw new ForbiddenException("Only doctors can update tooth records.");
+        await ValidateReportAssociationAsync(patientId, dto.LastUpdatedInReportId, requestingDoctorId, ct);
 
-        var charts = await _uow.DentalCharts.FindAsync(dc => dc.PatientId == patientId, ct);
+        var charts = await _uow.DentalCharts.FindTrackedAsync(dc => dc.PatientId == patientId, ct);
         var chart = charts.FirstOrDefault();
 
         if (chart == null)
@@ -73,7 +74,7 @@ public class DentalChartService : IDentalChartService
         }
 
         // BR-44: unique (ChartId, ToothNumber) — upsert
-        var toothRecords = await _uow.ToothRecords.FindAsync(t => t.ChartId == chart.Id && t.ToothNumber == dto.ToothNumber, ct);
+        var toothRecords = await _uow.ToothRecords.FindTrackedAsync(t => t.ChartId == chart.Id && t.ToothNumber == dto.ToothNumber, ct);
         var toothRecord = toothRecords.FirstOrDefault();
 
         if (toothRecord == null)
@@ -113,7 +114,10 @@ public class DentalChartService : IDentalChartService
         var doctor = await _uow.Doctors.GetByIdAsync(requestingDoctorId, ct);
         if (doctor == null) throw new ForbiddenException("Only doctors can update tooth records.");
 
-        var charts = await _uow.DentalCharts.FindAsync(dc => dc.PatientId == patientId, ct);
+        foreach (var record in dto.Records)
+            await ValidateReportAssociationAsync(patientId, record.LastUpdatedInReportId, requestingDoctorId, ct);
+
+        var charts = await _uow.DentalCharts.FindTrackedAsync(dc => dc.PatientId == patientId, ct);
         var chart = charts.FirstOrDefault();
 
         if (chart == null)
@@ -123,7 +127,7 @@ public class DentalChartService : IDentalChartService
             await _uow.SaveChangesAsync(ct);
         }
 
-        var existingRecords = (await _uow.ToothRecords.FindAsync(t => t.ChartId == chart.Id, ct)).ToList();
+        var existingRecords = (await _uow.ToothRecords.FindTrackedAsync(t => t.ChartId == chart.Id, ct)).ToList();
 
         foreach (var recordDto in dto.Records)
         {
@@ -165,8 +169,7 @@ public class DentalChartService : IDentalChartService
     private async Task<DentalChartResponseDto> MapToResponseAsync(DentalChart dc, CancellationToken ct)
     {
         var patient = dc.Patient ?? await _uow.Patients.GetByIdAsync(dc.PatientId, ct);
-        var records = dc.ToothRecords?.ToList()
-            ?? (await _uow.ToothRecords.FindAsync(t => t.ChartId == dc.Id, ct)).ToList();
+        var records = (await _uow.ToothRecords.FindAsync(t => t.ChartId == dc.Id, ct)).ToList();
 
         return new DentalChartResponseDto
         {
@@ -189,5 +192,20 @@ public class DentalChartService : IDentalChartService
             CreatedAt = dc.CreatedAt,
             UpdatedAt = dc.UpdatedAt
         };
+    }
+
+    private async Task ValidateReportAssociationAsync(
+        int patientId, int? reportId, int requestingDoctorId, CancellationToken ct)
+    {
+        if (!reportId.HasValue) return;
+
+        var report = await _uow.Reports.GetByIdAsync(reportId.Value, ct)
+            ?? throw new NotFoundException("Associated medical report not found.");
+
+        if (report.PatientId != patientId)
+            throw new BusinessRuleException("The associated report belongs to a different patient.");
+
+        if (report.DoctorId != requestingDoctorId)
+            throw new ForbiddenException("Only the report's author can associate it with tooth records.");
     }
 }

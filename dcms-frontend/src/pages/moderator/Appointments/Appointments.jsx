@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Appointments.css";
 
-import SearchInput from "../../../components/common/SearchInput/SearchInput";
+
 import StatusTabs from "../../../components/common/StatusTabs/StatusTabs";
 import FilterDropdown from "../../../components/common/FilterDropdown/FilterDropdown";
 import SortDropdown from "../../../components/common/SortDropdown/SortDropdown";
@@ -10,6 +10,7 @@ import DataTable from "../../../components/common/DataTable/DataTable";
 import Pagination from "../../../components/common/Pagination/Pagination";
 import CancelModal from "../../../components/ui/CancelModal/CancelModal";
 import { getAllAppointments, cancelAppointment } from "../../../services/appointmentServices";
+import { getDoctors } from "../../../services/publicServices";
 
 function Appointments() {
   const navigate = useNavigate();
@@ -22,7 +23,6 @@ function Appointments() {
     "Completed",
     "Rejected",
     "Cancelled",
-    "Rescheduled",
   ];
 
   const columns = [
@@ -34,6 +34,7 @@ function Appointments() {
   ];
 
   const [appointments, setAppointments] = useState([]);
+  const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modal State
@@ -53,8 +54,17 @@ function Appointments() {
       const params = {
         page: currentPage,
         pageSize: 10,
-        status: activeTab !== "All" ? activeTab : undefined
+        status: activeTab !== "All" ? activeTab : undefined,
+        doctorId: doctorFilter || undefined,
+        sortBy: sortBy === "oldest" ? "CreatedAt" : sortBy === "newest" ? "CreatedAt" : undefined,
+        sortDescending: sortBy !== "oldest",
       };
+
+      if (searchQuery) {
+        params.fromDate = searchQuery;
+        params.toDate = searchQuery;
+      }
+
       const data = await getAllAppointments(params);
       setAppointments(data?.items || []);
       setTotalCount(data?.totalCount || 0);
@@ -67,7 +77,11 @@ function Appointments() {
 
   useEffect(() => {
     fetchAppointments();
-  }, [currentPage, activeTab]);
+  }, [currentPage, activeTab, doctorFilter, searchQuery, sortBy]);
+
+  useEffect(() => {
+    getDoctors().then((data) => setDoctors(data || [])).catch((error) => console.error("Failed to fetch doctors", error));
+  }, []);
 
   const initiateCancel = (id) => {
     setAppointmentToCancel(id);
@@ -81,28 +95,13 @@ function Appointments() {
       setAppointmentToCancel(null);
       fetchAppointments();
     } catch (err) {
-      alert("Cancellation failed: " + err.message);
+      const errData = err.response?.data;
+      const errorMsg = errData?.message || errData?.detail || err.message || "Unknown error";
+      alert("Cancellation failed: " + errorMsg);
     }
   };
 
-  // 1. Search Query Filter (Client Side since API doesn't have search query param yet)
-  let filtered = appointments.filter(
-    (app) =>
-      app.patientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.doctorName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // 3. Doctor Dropdown Filter
-  if (doctorFilter) {
-    filtered = filtered.filter((app) => app.doctorId?.toString() === doctorFilter);
-  }
-
-  // 4. Sorting
-  if (sortBy === "oldest") {
-    filtered.sort((a, b) => a.id - b.id);
-  } else if (sortBy === "newest") {
-    filtered.sort((a, b) => b.id - a.id);
-  }
+  const filtered = appointments;
 
   // 5. Pagination calculation for UI
   const itemsPerPage = 10;
@@ -125,15 +124,20 @@ function Appointments() {
       </div>
 
       <div className="appointments-toolbar">
-        <SearchInput
-          placeholder="Search appointment..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setCurrentPage(1);
-          }}
-          onSearch={() => setCurrentPage(1)}
-        />
+        <div className="search-input">
+          <span>📅</span>
+          <input
+            type="date"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+          {searchQuery && (
+            <button onClick={() => { setSearchQuery(""); setCurrentPage(1); }}>Clear</button>
+          )}
+        </div>
 
         <FilterDropdown
           label="Doctor"
@@ -144,8 +148,7 @@ function Appointments() {
           }}
           options={[
             { value: "", label: "All Doctors" },
-            { value: "1", label: "Dr. Sara" },
-            { value: "2", label: "Dr. Omar" },
+            ...doctors.map((doctor) => ({ value: String(doctor.id), label: doctor.fullName })),
           ]}
         />
 
@@ -194,14 +197,6 @@ function Appointments() {
                 Edit
               </button>
 
-              {["Pending", "Confirmed"].includes(row.status) && (
-                <button
-                  className="danger"
-                  onClick={() => initiateCancel(row.id)}
-                >
-                  Cancel
-                </button>
-              )}
             </div>
           )}
         />

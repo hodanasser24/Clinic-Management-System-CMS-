@@ -116,33 +116,43 @@ public class AppointmentController : ControllerBase
 
     // ── Mutation endpoints ─────────────────────────────────────────────────────
 
-    [Authorize(Roles = "Patient")]
+    [Authorize(Roles = "Patient,Admin,Owner")]
     [HttpPost]
     public async Task<IActionResult> Book(
         [FromBody] AppointmentRequestDto dto, CancellationToken ct)
     {
-        dto.PatientId = GetUserId();
+        if (User.IsInRole("Patient"))
+            dto.PatientId = GetUserId();
         var result = await _appointmentService.BookAsync(dto, ct);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+    }
+
+    [Authorize(Roles = "Admin,Owner")]
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(
+        int id, [FromBody] AppointmentRequestDto dto, CancellationToken ct)
+    {
+        var result = await _appointmentService.UpdateAsync(id, dto, ct);
+        return Ok(result);
     }
 
     [Authorize(Roles = "Admin")]
     [HttpPut("{id:int}/confirm")]
     public async Task<IActionResult> Confirm(
-        int id, [FromBody] ConfirmAppointmentRequestDto dto, CancellationToken ct)
+        int id, CancellationToken ct)
     {
-        dto.AdminId = GetUserId();
-        var result = await _appointmentService.ConfirmAsync(id, dto, ct);
+        var adminId = GetUserId();
+        var result = await _appointmentService.ConfirmAsync(id, adminId, ct);
         return Ok(result);
     }
 
     [Authorize(Roles = "Admin")]
     [HttpPut("{id:int}/reject")]
     public async Task<IActionResult> Reject(
-        int id, [FromBody] RejectAppointmentRequestDto dto, CancellationToken ct)
+        int id, CancellationToken ct)
     {
-        dto.AdminId = GetUserId();
-        var result = await _appointmentService.RejectAsync(id, dto, ct);
+        var adminId = GetUserId();
+        var result = await _appointmentService.RejectAsync(id, adminId, ct);
         return Ok(result);
     }
 

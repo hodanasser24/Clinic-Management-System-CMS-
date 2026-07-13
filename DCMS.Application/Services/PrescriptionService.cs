@@ -52,12 +52,16 @@ public class PrescriptionService : IPrescriptionService
         };
     }
 
-    public async Task<PrescriptionResponseDto> CreateAsync(CreatePrescriptionRequestDto dto, CancellationToken ct = default)
+    public async Task<PrescriptionResponseDto> CreateAsync(
+        CreatePrescriptionRequestDto dto, int requestingDoctorId, CancellationToken ct = default)
     {
         // BR-39: Prescription requires existing Report
         var report = await _uow.Reports.GetByIdAsync(dto.ReportId, ct);
         if (report == null)
             throw new NotFoundException("Report not found. A prescription must be linked to an existing report.");
+
+        if (report.DoctorId != requestingDoctorId)
+            throw new ForbiddenException("Only the report's author can prescribe medication for it.");
 
         var existing = await _uow.Prescriptions.FindAsync(p => p.ReportId == dto.ReportId, ct);
         if (existing.Any())
@@ -115,7 +119,7 @@ public class PrescriptionService : IPrescriptionService
     public async Task<PrescriptionResponseDto> UpdateAsync(
         int id, int requestingDoctorId, CreatePrescriptionRequestDto dto, CancellationToken ct = default)
     {
-        var prescription = await _uow.Prescriptions.GetByIdAsync(id, ct)
+        var prescription = await _uow.Prescriptions.GetByIdWithItemsAsync(id, ct)
             ?? throw new NotFoundException($"Prescription {id} not found.");
 
         var report = await _uow.Reports.GetByIdAsync(prescription.ReportId, ct);
@@ -146,10 +150,6 @@ public class PrescriptionService : IPrescriptionService
 
     // ── PDF Export ────────────────────────────────────────────────
 
-    /// <summary>
-    /// Generates a text-based prescription export.
-    /// In production, swap StringBuilder for QuestPDF or iTextSharp.
-    /// </summary>
     public async Task<byte[]> ExportPdfAsync(int id, CancellationToken ct = default)
     {
         var p = await _uow.Prescriptions.GetByIdWithItemsAsync(id, ct)
@@ -192,6 +192,50 @@ public class PrescriptionService : IPrescriptionService
         sb.AppendLine("Doctor's Signature: ____________________");
         sb.AppendLine("===========================================");
 
-        return Encoding.UTF8.GetBytes(sb.ToString());
+        return BuildPdf(sb.ToString());
     }
+
+    private static byte[] BuildPdf(string text)
+    {
+        const int pageWidth = 612;
+        const int pageHeight = 792;
+        var lines = text.Replace("\r", string.Empty).Split('\n').Take(46)
+            .Select(line => EscapePdfText(line.Length > 95 ? line[..95] : line));
+        var content = new StringBuilder("BT\n/F1 10 Tf\n50 750 Td\n14 TL\n");
+        foreach (var line in lines)
+            content.Append('(').Append(line).Append(") Tj\nT*\n");
+        content.Append("ET");
+        var contentBytes = Encoding.ASCII.GetBytes(content.ToString());
+        var objects = new[]
+        {
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {pageWidth} {pageHeight}] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+            $"<< /Length {contentBytes.Length} >>\nstream\n{Encoding.ASCII.GetString(contentBytes)}\nendstream",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
+        };
+        using var stream = new MemoryStream();
+        using var writer = new StreamWriter(stream, Encoding.ASCII, leaveOpen: true);
+        writer.Write("%PDF-1.4\n");
+        writer.Flush();
+        var offsets = new List<long> { 0 };
+        for (var index = 0; index < objects.Length; index++)
+        {
+            offsets.Add(stream.Position);
+            writer.Write($"{index + 1} 0 obj\n{objects[index]}\nendobj\n");
+            writer.Flush();
+        }
+        var xrefOffset = stream.Position;
+        writer.Write($"xref\n0 {objects.Length + 1}\n");
+        writer.Write("0000000000 65535 f \n");
+        foreach (var offset in offsets.Skip(1)) writer.Write($"{offset:D10} 00000 n \n");
+        writer.Write($"trailer\n<< /Size {objects.Length + 1} /Root 1 0 R >>\nstartxref\n{xrefOffset}\n%%EOF");
+        writer.Flush();
+        return stream.ToArray();
+    }
+
+    private static string EscapePdfText(string value) => new(value
+        .Select(character => character is '\\' or '(' or ')' ? $"\\{character}" : character <= 127 ? character.ToString() : "?")
+        .SelectMany(part => part)
+        .ToArray());
 }

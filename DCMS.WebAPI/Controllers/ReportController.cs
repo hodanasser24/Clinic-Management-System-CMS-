@@ -71,7 +71,7 @@ public class ReportController : ControllerBase
 
     // ── Write ──────────────────────────────────────────────────────────────────
 
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Roles = "Doctor,Owner")]
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateReportRequestDto dto, CancellationToken ct)
@@ -82,7 +82,7 @@ public class ReportController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Roles = "Doctor,Owner")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id, [FromBody] UpdateReportRequestDto dto, CancellationToken ct)

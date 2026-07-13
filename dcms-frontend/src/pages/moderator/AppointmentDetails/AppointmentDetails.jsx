@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getAppointmentById, confirmAppointment, rejectAppointment, cancelAppointment } from "../../../services/appointmentServices";
+import { formatTo12Hour } from "../../../utils/timeFormatter";
 import CancelModal from "../../../components/ui/CancelModal/CancelModal";
 import "./AppointmentDetails.css";
 
@@ -32,20 +33,24 @@ function AppointmentDetails() {
   const handleConfirm = async () => {
     if (!window.confirm("Confirm this appointment?")) return;
     try {
-      await confirmAppointment(id, {});
+      await confirmAppointment(id);
       loadData();
     } catch (err) {
-      alert("Failed to confirm: " + err.message);
+      const errData = err.response?.data;
+      const errorMsg = errData?.message || errData?.detail || err.message || "Unknown error";
+      alert("Failed to confirm: " + errorMsg);
     }
   };
 
   const handleReject = async () => {
     if (!window.confirm("Reject this appointment?")) return;
     try {
-      await rejectAppointment(id, {});
+      await rejectAppointment(id);
       loadData();
     } catch (err) {
-      alert("Failed to reject: " + err.message);
+      const errData = err.response?.data;
+      const errorMsg = errData?.message || errData?.detail || err.message || "Unknown error";
+      alert("Failed to reject: " + errorMsg);
     }
   };
 
@@ -59,7 +64,9 @@ function AppointmentDetails() {
       setCancelModalOpen(false);
       loadData();
     } catch (err) {
-      alert("Failed to cancel: " + err.message);
+      const errData = err.response?.data;
+      const errorMsg = errData?.message || errData?.detail || err.message || "Unknown error";
+      alert("Failed to cancel: " + errorMsg);
     }
   };
 
@@ -98,7 +105,7 @@ function AppointmentDetails() {
           <h2>Appointment Information</h2>
           <p><strong>Appointment ID:</strong> #{appointment.id}</p>
           <p><strong>Date:</strong> {appointment.date}</p>
-          <p><strong>Time:</strong> {appointment.startTime}</p>
+          <p><strong>Time:</strong> {formatTo12Hour(appointment.startTime)}</p>
           <p>
             <strong>Status:</strong>{" "}
             <span className={`status-badge ${appointment.status?.toLowerCase()}`}>
@@ -123,10 +130,6 @@ function AppointmentDetails() {
               <button onClick={handleConfirm}>Confirm</button>
               <button className="danger" onClick={handleReject}>Reject</button>
             </>
-          )}
-
-          {["Pending", "Confirmed"].includes(appointment.status) && (
-            <button className="danger" onClick={initiateCancel}>Cancel</button>
           )}
 
           {/* Navigation to edit */}

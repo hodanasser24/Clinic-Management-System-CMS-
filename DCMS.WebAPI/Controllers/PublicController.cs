@@ -72,7 +72,7 @@ public class PublicController : ControllerBase
     {
         var doctors = await _uow.Doctors.FindAsync(d => d.IsActive, ct);
         var result = doctors
-            .Where(d => d.Role == DCMS.Domain.Enums.UserRole.Doctor)
+            .Where(d => d.Role == DCMS.Domain.Enums.UserRole.Doctor || d.Role == DCMS.Domain.Enums.UserRole.Owner)
             .Select(d => new
             {
                 d.Id,
@@ -105,6 +105,32 @@ public class PublicController : ControllerBase
             ServiceName = o.Service?.Name
         });
         return Ok(result);
+    }
+
+    /// <summary>Get available dates for a doctor.</summary>
+    [HttpGet("doctors/{doctorId:int}/available-dates")]
+    public async Task<IActionResult> GetAvailableDates(
+        int doctorId,
+        [FromQuery] int? branchId,
+        [FromServices] IScheduleService scheduleService,
+        [FromQuery] int weeksToGenerate = 4,
+        CancellationToken ct = default)
+    {
+        int actualBranchId;
+        if (!branchId.HasValue)
+        {
+            var branches = await _uow.Branches.FindAsync(b => b.IsActive, ct);
+            var first = branches.FirstOrDefault();
+            if (first == null) return NotFound("No active branches found.");
+            actualBranchId = first.Id;
+        }
+        else
+        {
+            actualBranchId = branchId.Value;
+        }
+
+        var dates = await scheduleService.GetAvailableDatesAsync(doctorId, actualBranchId, weeksToGenerate, ct);
+        return Ok(dates);
     }
 
     /// <summary>Get available appointment slots for a doctor on a specific date.</summary>

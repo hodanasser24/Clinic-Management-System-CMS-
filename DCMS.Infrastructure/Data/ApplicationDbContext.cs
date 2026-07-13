@@ -562,6 +562,9 @@ public class ApplicationDbContext : DbContext, IAppDbContext
             e.Property(dn => dn.Content).IsRequired().HasMaxLength(2000);
             e.HasOne(dn => dn.Doctor).WithMany(d => d.DoctorNotes)
              .HasForeignKey(dn => dn.DoctorId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(dn => dn.Patient).WithMany()
+             .HasForeignKey(dn => dn.PatientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(dn => new { dn.DoctorId, dn.PatientId, dn.CreatedAt });
         });
     }
 }

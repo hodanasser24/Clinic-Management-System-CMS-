@@ -1,28 +1,16 @@
 import { useState, useEffect } from "react";
 import "./Profile.css";
-import { getAuthToken } from "../../../services/authServices";
+import apiClient from "../../../services/apiClient";
+import { getBranches } from "../../../services/publicServices";
 
 async function getAdminProfile() {
-  const token = getAuthToken();
-  const res = await fetch("https://localhost:7299/api/Profile/admin", {
-    headers: { "Authorization": `Bearer ${token}` }
-  });
-  if (!res.ok) throw new Error("Failed to load profile");
-  return res.json();
+  const res = await apiClient.get("/api/Profile/admin");
+  return res.data;
 }
 
 async function updateAdminProfile(data) {
-  const token = getAuthToken();
-  const res = await fetch("https://localhost:7299/api/Profile/admin", {
-    method: "PUT",
-    headers: { 
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error("Failed to update profile");
-  return res.json();
+  const res = await apiClient.put("/api/Profile/admin", data);
+  return res.data;
 }
 
 function Profile() {
@@ -31,19 +19,21 @@ function Profile() {
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [branches, setBranches] = useState([]);
 
   const loadProfile = async () => {
     try {
       setLoading(true);
       setError("");
-      const data = await getAdminProfile();
+      const [data, branchData] = await Promise.all([getAdminProfile(), getBranches()]);
       setProfile(data);
+      setBranches(branchData || []);
       setFormData({
         fullName: data.fullName,
         phone: data.phone || ""
       });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -60,7 +50,7 @@ function Profile() {
       setIsEditing(false);
       loadProfile();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to update profile");
     }
   };
 
@@ -73,7 +63,7 @@ function Profile() {
       {error && <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>}
 
       <div className="profile-card">
-        <img src="https://placehold.co/120x120" alt="Profile" />
+
 
         <h2>
           {isEditing ? (
@@ -110,13 +100,13 @@ function Profile() {
           </div>
 
           <div>
-            <strong>Branch</strong>
-            <span>Main Branch (Mock)</span>
+            <strong>Clinic Branches</strong>
+            <span>{branches.length ? branches.map((branch) => branch.name).join(", ") : "No active branches"}</span>
           </div>
 
           <div>
             <strong>Working Hours</strong>
-            <span>09:00 AM - 05:00 PM (Mock)</span>
+            <span>{branches.length ? branches.map((branch) => `${branch.name}: ${branch.workingHours || "Not recorded"}`).join(" | ") : "Not recorded"}</span>
           </div>
         </div>
 

@@ -28,7 +28,7 @@ public class DentalChartController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Roles = "Doctor,Owner")]
     [HttpPut("{patientId:int}/notes")]
     public async Task<IActionResult> UpdateNotes(int patientId, [FromBody] UpdateDentalChartRequestDto dto, CancellationToken ct)
     {
@@ -37,7 +37,7 @@ public class DentalChartController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Roles = "Doctor,Owner")]
     [HttpPut("{patientId:int}/tooth")]
     public async Task<IActionResult> UpsertToothRecord(int patientId, [FromBody] UpsertToothRecordRequestDto dto, CancellationToken ct)
     {
@@ -46,7 +46,7 @@ public class DentalChartController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Roles = "Doctor,Owner")]
     [HttpPut("{patientId:int}/bulk")]
     public async Task<IActionResult> BulkUpsertToothRecords(int patientId, [FromBody] BulkUpsertToothRecordsRequestDto dto, CancellationToken ct)
     {

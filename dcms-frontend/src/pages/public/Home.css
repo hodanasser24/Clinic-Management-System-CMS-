@@ -186,6 +186,9 @@
 .hero-trust strong {
   color: #facc15;
   letter-spacing: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .hero-trust span {
@@ -207,24 +210,25 @@
   backdrop-filter: blur(20px);
 }
 
-.doctor-card-preview {
+/* ---- Info Card (replaces doctor card) ---- */
+.info-card {
   position: absolute;
   top: 20px;
   right: 25px;
-  width: 260px;
-  padding: 26px;
+  width: 290px;
+  padding: 30px;
   text-align: center;
   z-index: 2;
 }
 
-.avatar {
-  width: 92px;
-  height: 92px;
+.info-card-icon {
+  width: 72px;
+  height: 72px;
   margin: 0 auto 18px;
-  border-radius: 28px;
+  border-radius: 22px;
   display: grid;
   place-items: center;
-  font-size: 54px;
+  color: #93c5fd;
   background: linear-gradient(
     135deg,
     rgba(96, 165, 250, 0.28),
@@ -232,30 +236,44 @@
   );
 }
 
-.doctor-card-preview h3 {
-  margin: 0 0 8px;
+.info-card h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
 }
 
-.doctor-card-preview p {
+.info-card p {
   color: #94a3b8;
-  margin: 0 0 16px;
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
-.mini-tags {
+.info-card-highlights {
   display: flex;
   gap: 10px;
   justify-content: center;
 }
 
-.mini-tags span {
-  font-size: 12px;
-  color: #bfdbfe;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: rgba(37, 99, 235, 0.16);
+.info-highlight {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(37, 99, 235, 0.14);
+  text-align: center;
 }
 
-.dashboard-mockup {
+.info-highlight strong {
+  display: block;
+  font-size: 18px;
+  color: #bfdbfe;
+}
+
+.info-highlight span {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ---- Treatment Flow Card (replaces dashboard mockup) ---- */
+.treatment-flow-card {
   position: absolute;
   left: 10px;
   bottom: 20px;
@@ -263,81 +281,67 @@
   padding: 28px;
 }
 
-.mockup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.treatment-flow-card .mockup-header {
   margin-bottom: 22px;
 }
 
-.mockup-header h3 {
+.treatment-flow-card .mockup-header h3 {
   margin: 0;
   font-size: 22px;
 }
 
-.mockup-header span {
-  color: #22c55e;
-  font-weight: 900;
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-}
-
-.mockup-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  margin-bottom: 18px;
-}
-
-.mockup-stats div {
-  padding: 18px;
-  border-radius: 18px;
-  background: rgba(30, 41, 59, 0.8);
-}
-
-.mockup-stats strong {
-  display: block;
-  font-size: 30px;
-}
-
-.mockup-stats span {
-  color: #94a3b8;
-}
-
-.appointment-preview {
+.treatment-steps {
   display: flex;
-  justify-content: space-between;
-  gap: 14px;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.treatment-step {
+  display: flex;
   align-items: center;
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(30, 41, 59, 0.64);
-  margin-top: 12px;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(30, 41, 59, 0.7);
+  transition: 0.25s;
 }
 
-.appointment-preview p {
-  margin: 5px 0 0;
-  color: #94a3b8;
+.treatment-step:hover {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.step-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #93c5fd;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(124, 58, 237, 0.18));
+  flex-shrink: 0;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.step-content strong {
+  font-size: 15px;
+  color: #f8fafc;
+}
+
+.step-content span {
   font-size: 13px;
+  color: #94a3b8;
 }
 
-.confirmed,
-.pending {
-  padding: 7px 11px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.confirmed {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.13);
-}
-
-.pending {
-  color: #facc15;
-  background: rgba(250, 204, 21, 0.13);
+.step-connector {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+  color: #475569;
 }
 
 .stats-section {
@@ -401,11 +405,16 @@
   line-height: 1.8;
 }
 
-.services-grid,
-.doctors-grid {
+.services-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 22px;
+}
+
+.doctors-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
 }
 
 .service-card,
@@ -449,36 +458,53 @@
   line-height: 1.7;
 }
 
+/* ---- Doctor Cards (enlarged) ---- */
 .doctor-card {
   text-align: center;
+  padding: 36px 30px;
 }
 
 .doctor-avatar {
-  width: 90px;
-  height: 90px;
-  margin: 0 auto 18px;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 20px;
   border-radius: 28px;
   display: grid;
   place-items: center;
-  font-size: 52px;
-  background: rgba(37, 99, 235, 0.16);
+  color: #93c5fd;
+  background: linear-gradient(
+    135deg,
+    rgba(96, 165, 250, 0.22),
+    rgba(124, 58, 237, 0.18)
+  );
+}
+
+.doctor-card h3 {
+  font-size: 24px;
 }
 
 .doctor-card span {
   display: block;
   color: #60a5fa;
   font-weight: 900;
-  margin: 14px 0 18px;
+  margin: 14px 0 20px;
 }
 
 .doctor-card a {
   display: inline-block;
   text-decoration: none;
   color: white;
-  padding: 11px 16px;
-  border-radius: 12px;
+  padding: 13px 20px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #2563eb, #7c3aed);
   font-weight: 800;
+  font-size: 15px;
+  transition: 0.25s;
+}
+
+.doctor-card a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.3);
 }
 
 .about-section {
@@ -524,6 +550,14 @@
   margin: 10px 0;
   color: #e2e8f0;
   font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contact-icon {
+  color: #60a5fa;
+  flex-shrink: 0;
 }
 
 .home-footer {
@@ -556,15 +590,17 @@
   }
 
   .hero-visual {
-    min-height: 620px;
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 
-  .doctor-card-preview,
-  .dashboard-mockup {
+  .info-card,
+  .treatment-flow-card {
     position: relative;
     width: auto;
     inset: auto;
-    margin-bottom: 20px;
   }
 
   .stats-section,

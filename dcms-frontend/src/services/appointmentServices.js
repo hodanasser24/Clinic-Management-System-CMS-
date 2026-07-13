@@ -1,32 +1,4 @@
-import { getAuthToken } from "./authServices";
-
-const API_BASE_URL = "https://localhost:7299/api";
-
-async function fetchWithAuth(url, options = {}) {
-  const token = getAuthToken();
-  const headers = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || errorData?.detail || `HTTP error! status: ${response.status}`);
-  }
-
-  // Handle empty responses (like 204 No Content or empty 200)
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
-}
+import apiClient from "./apiClient";
 
 export async function getPatientAppointments(patientId, params = {}) {
   const query = new URLSearchParams();
@@ -34,12 +6,16 @@ export async function getPatientAppointments(patientId, params = {}) {
   if (params.page) query.append("page", params.page);
   if (params.pageSize) query.append("pageSize", params.pageSize);
   if (params.status) query.append("status", params.status);
+  if (params.doctorId) query.append("doctorId", params.doctorId);
+  if (params.patientName) query.append("patientName", params.patientName);
   if (params.sortBy) query.append("sortBy", params.sortBy);
+  if (params.sortDescending !== undefined) query.append("sortDescending", params.sortDescending);
   // Defaulting to newest first based on the requirements
   query.append("sortDescending", "true");
 
   const queryString = query.toString() ? `?${query.toString()}` : "";
-  return fetchWithAuth(`/Appointment/by-patient/${patientId}${queryString}`);
+  const res = await apiClient.get(`/api/Appointment/by-patient/${patientId}${queryString}`);
+  return res.data;
 }
 
 export async function getDoctorAppointments(doctorId, params = {}) {
@@ -54,25 +30,28 @@ export async function getDoctorAppointments(doctorId, params = {}) {
   query.append("sortDescending", "true");
 
   const queryString = query.toString() ? `?${query.toString()}` : "";
-  return fetchWithAuth(`/Appointment/by-doctor/${doctorId}${queryString}`);
+  const res = await apiClient.get(`/api/Appointment/by-doctor/${doctorId}${queryString}`);
+  return res.data;
 }
 
 export async function getAppointmentById(id) {
-  return fetchWithAuth(`/Appointment/${id}`);
+  const res = await apiClient.get(`/api/Appointment/${id}`);
+  return res.data;
 }
 
 export async function cancelAppointment(id, reason) {
-  return fetchWithAuth(`/Appointment/${id}/cancel`, {
-    method: "PUT",
-    body: JSON.stringify({ reason }),
-  });
+  const res = await apiClient.put(`/api/Appointment/${id}/cancel`, { reason });
+  return res.data;
 }
 
 export async function bookAppointment(data) {
-  return fetchWithAuth("/Appointment", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  const res = await apiClient.post("/api/Appointment", data);
+  return res.data;
+}
+
+export async function updateAppointment(id, data) {
+  const res = await apiClient.put(`/api/Appointment/${id}`, data);
+  return res.data;
 }
 
 export async function getUpcomingPatientAppointments(patientId, params = {}) {
@@ -80,7 +59,8 @@ export async function getUpcomingPatientAppointments(patientId, params = {}) {
   if (params.page) query.append("page", params.page);
   if (params.pageSize) query.append("pageSize", params.pageSize);
   const queryString = query.toString() ? `?${query.toString()}` : "";
-  return fetchWithAuth(`/Appointment/upcoming/by-patient/${patientId}${queryString}`);
+  const res = await apiClient.get(`/api/Appointment/upcoming/by-patient/${patientId}${queryString}`);
+  return res.data;
 }
 
 export async function getHistoryPatientAppointments(patientId, params = {}) {
@@ -88,14 +68,13 @@ export async function getHistoryPatientAppointments(patientId, params = {}) {
   if (params.page) query.append("page", params.page);
   if (params.pageSize) query.append("pageSize", params.pageSize);
   const queryString = query.toString() ? `?${query.toString()}` : "";
-  return fetchWithAuth(`/Appointment/history/by-patient/${patientId}${queryString}`);
+  const res = await apiClient.get(`/api/Appointment/history/by-patient/${patientId}${queryString}`);
+  return res.data;
 }
 
 export async function rescheduleAppointment(id, data) {
-  return fetchWithAuth(`/Appointment/${id}/reschedule`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  const res = await apiClient.put(`/api/Appointment/${id}/reschedule`, data);
+  return res.data;
 }
 
 export async function getAllAppointments(params = {}) {
@@ -103,34 +82,36 @@ export async function getAllAppointments(params = {}) {
   if (params.page) query.append("page", params.page);
   if (params.pageSize) query.append("pageSize", params.pageSize);
   if (params.status) query.append("status", params.status);
+  if (params.id) query.append("id", params.id);
+  if (params.patientName) query.append("patientName", params.patientName);
+  if (params.doctorName) query.append("doctorName", params.doctorName);
+  if (params.doctorId) query.append("doctorId", params.doctorId);
+  if (params.fromDate) query.append("fromDate", params.fromDate);
+  if (params.toDate) query.append("toDate", params.toDate);
+  if (params.sortBy) query.append("sortBy", params.sortBy);
+  if (params.sortDescending !== undefined) query.append("sortDescending", params.sortDescending);
+  
   const queryString = query.toString() ? `?${query.toString()}` : "";
-  return fetchWithAuth(`/Appointment${queryString}`);
+  const res = await apiClient.get(`/api/Appointment${queryString}`);
+  return res.data;
 }
 
-export async function confirmAppointment(id, data) {
-  return fetchWithAuth(`/Appointment/${id}/confirm`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+export async function confirmAppointment(id) {
+  const res = await apiClient.put(`/api/Appointment/${id}/confirm`);
+  return res.data;
 }
 
-export async function rejectAppointment(id, data) {
-  return fetchWithAuth(`/Appointment/${id}/reject`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+export async function rejectAppointment(id) {
+  const res = await apiClient.put(`/api/Appointment/${id}/reject`);
+  return res.data;
 }
 
 export async function markAttendance(id, data) {
-  return fetchWithAuth(`/Appointment/${id}/mark-attendance`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  const res = await apiClient.put(`/api/Appointment/${id}/mark-attendance`, data);
+  return res.data;
 }
 
 export async function markUrgent(id, data) {
-  return fetchWithAuth(`/Appointment/${id}/mark-urgent`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  const res = await apiClient.put(`/api/Appointment/${id}/mark-urgent`, data);
+  return res.data;
 }

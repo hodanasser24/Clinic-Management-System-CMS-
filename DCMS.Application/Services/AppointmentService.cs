@@ -146,6 +146,47 @@ public class AppointmentService : IAppointmentService
         return MapToResponse(full);
     }
 
+    public async Task<AppointmentResponseDto> UpdateAsync(
+        int id, AppointmentRequestDto dto, CancellationToken ct = default)
+    {
+        var appointment = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
+            ?? throw new NotFoundException($"Appointment {id} not found.");
+
+        if (appointment.Status is AppointmentStatus.Completed or AppointmentStatus.Cancelled or AppointmentStatus.Rejected)
+            throw new BusinessRuleException("Cannot update an appointment in its current state.");
+
+        _ = await _uow.Patients.GetByIdAsync(dto.PatientId, ct)
+            ?? throw new NotFoundException("Patient not found.");
+
+        var schedule = await _uow.Schedules.GetByDoctorBranchDayAsync(
+            dto.DoctorId, dto.BranchId, dto.Date.DayOfWeek, ct);
+        if (schedule == null || !schedule.IsActive)
+            throw new BusinessRuleException(
+                "No active schedule found for the selected doctor, branch, and day.");
+
+        var conflict = await _uow.Appointments.HasConflictAsync(
+            dto.DoctorId, dto.Date, dto.StartTime, id, ct);
+        if (conflict)
+            throw new ConflictException("Doctor already has an appointment at this time.");
+
+        appointment.PatientId = dto.PatientId;
+        appointment.DoctorId = dto.DoctorId;
+        appointment.BranchId = dto.BranchId;
+        appointment.ServiceId = dto.ServiceId;
+        appointment.Date = dto.Date;
+        appointment.StartTime = dto.StartTime;
+        appointment.EndTime = dto.StartTime.AddMinutes(schedule.SessionDurationMinutes);
+        appointment.Notes = dto.Notes;
+        appointment.PreviousAppointmentId = dto.PreviousAppointmentId;
+        appointment.FollowUpFlag = dto.PreviousAppointmentId.HasValue;
+        appointment.Status = AppointmentStatus.Pending;
+
+        await _uow.SaveChangesAsync(ct);
+
+        var full = await _uow.Appointments.GetByIdWithDetailsAsync(appointment.Id, ct) ?? appointment;
+        return MapToResponse(full);
+    }
+
     public async Task<AppointmentResponseDto> RescheduleAsync(
         int id, int requestingUserId, RescheduleAppointmentRequestDto dto, CancellationToken ct = default)
     {
@@ -187,7 +228,7 @@ public class AppointmentService : IAppointmentService
     }
 
     public async Task<AppointmentResponseDto> ConfirmAsync(
-        int id, ConfirmAppointmentRequestDto dto, CancellationToken ct = default)
+        int id, int adminId, CancellationToken ct = default)
     {
         var a = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
             ?? throw new NotFoundException($"Appointment {id} not found.");
@@ -196,7 +237,7 @@ public class AppointmentService : IAppointmentService
             throw new BusinessRuleException("Only pending appointments can be confirmed.");
 
         a.Status      = AppointmentStatus.Confirmed;
-        a.ConfirmedBy = dto.AdminId;
+        a.ConfirmedBy = adminId;
         a.ConfirmedAt = DateTime.UtcNow;
 
         await _uow.SaveChangesAsync(ct);
@@ -215,7 +256,7 @@ public class AppointmentService : IAppointmentService
     }
 
     public async Task<AppointmentResponseDto> RejectAsync(
-        int id, RejectAppointmentRequestDto dto, CancellationToken ct = default)
+        int id, int adminId, CancellationToken ct = default)
     {
         var a = await _uow.Appointments.GetByIdWithDetailsTrackedAsync(id, ct)
             ?? throw new NotFoundException($"Appointment {id} not found.");
@@ -225,7 +266,7 @@ public class AppointmentService : IAppointmentService
 
         a.Status     = AppointmentStatus.Rejected;
         a.RejectedAt = DateTime.UtcNow;
-        a.RejectedBy = dto.AdminId;
+        a.RejectedBy = adminId;
 
         await _uow.SaveChangesAsync(ct);
 
@@ -397,7 +438,9 @@ public class AppointmentService : IAppointmentService
     private static AppointmentSummaryDto MapToSummary(Appointment a) => new()
     {
         Id          = a.Id,
+        PatientId   = a.PatientId,
         PatientName = a.Patient?.FullName ?? string.Empty,
+        DoctorId    = a.DoctorId,
         DoctorName  = a.Doctor?.FullName  ?? string.Empty,
         BranchName  = a.Branch?.Name      ?? string.Empty,
         ServiceName = a.Service?.Name     ?? string.Empty,

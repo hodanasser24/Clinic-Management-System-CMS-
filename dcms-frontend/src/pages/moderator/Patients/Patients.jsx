@@ -73,7 +73,7 @@ function Patients() {
         id: p.id,
         name: p.fullName || "N/A",
         phone: p.phone || "N/A",
-        gender: "N/A", // Backend does not support Gender
+        gender: p.gender || "N/A", 
         age: calculateAge(p.dateOfBirth)
       }));
 
@@ -107,7 +107,7 @@ function Patients() {
       setSelectedPatient(res.data);
       setFormData({
         fullName: res.data.fullName || "",
-        email: res.data.email || "", // Email might not be updated, but good to have
+        email: res.data.email || "", 
         phone: res.data.phone || "",
         dateOfBirth: res.data.dateOfBirth ? res.data.dateOfBirth.split('T')[0] : "",
         medicalHistory: res.data.medicalHistory || "",
@@ -141,7 +141,22 @@ function Patients() {
       setShowModal(false);
       fetchPatients();
     } catch (err) {
-      alert(err.response?.data?.message || "Operation failed.");
+      const data = err.response?.data;
+      let msg = "Operation failed.";
+      if (data) {
+        if (data.errors) {
+          msg = Object.values(data.errors).flat().join("\n");
+        } else if (data.message) {
+          msg = data.message;
+        } else if (data.detail) {
+          msg = data.detail;
+        } else if (typeof data === "string") {
+          msg = data;
+        }
+      } else if (err.message) {
+        msg = err.message;
+      }
+      alert(msg);
     }
   };
 
@@ -201,18 +216,14 @@ function Patients() {
                 View
               </button>
 
+              {/* 
               <button
                 onClick={() => openEditModal(row.id)}
               >
                 Edit
               </button>
+              */}
 
-              <button
-                className="danger"
-                onClick={() => openDeleteModal(row)}
-              >
-                Delete
-              </button>
             </div>
           )}
         />

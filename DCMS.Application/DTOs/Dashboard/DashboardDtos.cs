@@ -55,6 +55,7 @@ public class AppointmentSummaryExportDto
     public TimeOnly StartTime { get; set; }
     public string Status { get; set; } = null!;
     public bool IsUrgent { get; set; }
+    public decimal Revenue { get; set; }
 }
 
 public class DoctorDailyDashboardDto

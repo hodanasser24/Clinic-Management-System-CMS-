@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../../services/apiClient";
+import { formatTo12Hour } from "../../../utils/timeFormatter";
 import "./Dashboard.css";
 
 function Dashboard() {
@@ -8,19 +9,23 @@ function Dashboard() {
   const [stats, setStats] = useState(null);
   const [recentAppointments, setRecentAppointments] = useState([]);
   const [recentPatients, setRecentPatients] = useState([]);
+  const [dailyReport, setDailyReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, appointmentsRes, patientsRes] = await Promise.all([
+        const today = new Date().toISOString().slice(0, 10);
+        const [statsRes, appointmentsRes, patientsRes, dailyRes] = await Promise.all([
           apiClient.get("/api/Dashboard/summary"),
           apiClient.get("/api/Appointment?page=1&pageSize=5"),
           apiClient.get("/api/patients/search?page=1&pageSize=5"),
+          apiClient.get(`/api/Dashboard/daily?date=${today}`),
         ]);
         setStats(statsRes.data);
         setRecentAppointments(appointmentsRes.data.items || []);
         setRecentPatients(patientsRes.data.items || []);
+        setDailyReport(dailyRes.data);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -32,9 +37,8 @@ function Dashboard() {
   }, []);
 
   const activities = [
-    "New appointment created by Ahmed Ali",
-    "Mona Hassan appointment marked as completed",
-    "New patient profile added",
+    ...recentAppointments.map((appointment) => `${appointment.patientName} has a ${appointment.status?.toLowerCase() || "new"} appointment with ${appointment.doctorName}.`),
+    ...recentPatients.map((patient) => `${patient.fullName} joined the clinic.`),
   ];
 
   if (loading) {
@@ -69,7 +73,7 @@ function Dashboard() {
         </div>
         <div className="stat-card">
           <h3>Cancelled</h3>
-          <span>0</span>
+          <span>{dailyReport?.cancelled || 0}</span>
         </div>
       </div>
 
@@ -92,7 +96,7 @@ function Dashboard() {
                 <div>
                   <strong>{item.patientName}</strong>
                   <p>
-                    {item.doctorName} • {item.startTime}
+                    {item.doctorName} • {formatTo12Hour(item.startTime)}
                   </p>
                 </div>
                 <span>{item.status}</span>

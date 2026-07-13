@@ -1,0 +1,155 @@
+.schedule-page {
+  padding: 30px;
+  color: white;
+}
+
+.schedule-header {
+  margin-bottom: 26px;
+}
+
+.schedule-header h1 {
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.schedule-header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.schedule-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.schedule-card {
+  background: #1e293b;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #334155;
+}
+
+.schedule-card h2 {
+  font-size: 20px;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.schedule-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  align-items: end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.form-group select,
+.form-group input {
+  width: 100%;
+  padding: 10px 15px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: white;
+  font-family: inherit;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.btn-submit {
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 18px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  background: #2563eb;
+  transition: opacity 0.2s;
+  height: 42px;
+}
+
+.btn-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.table-actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.table-actions button.danger {
+  background: #ef4444;
+}
+
+.table-actions button.success {
+  background: #10b981;
+}
+
+.table-actions button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.table-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-badge.active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.status-badge.inactive {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}

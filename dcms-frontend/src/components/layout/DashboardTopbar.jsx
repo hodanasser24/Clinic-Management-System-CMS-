@@ -10,8 +10,22 @@ function DashboardTopbar() {
       navigate("/doctor/notifications");
     } else if (pathname.startsWith("/patient")) {
       navigate("/patient/notifications");
+    } else if (pathname.startsWith("/owner")) {
+      navigate("/owner/notifications");
     } else {
       navigate("/moderator/notifications");
+    }
+  };
+
+  const goHome = () => {
+    if (pathname.startsWith("/doctor")) {
+      navigate("/doctor/dashboard");
+    } else if (pathname.startsWith("/patient")) {
+      navigate("/patient/dashboard");
+    } else if (pathname.startsWith("/owner")) {
+      navigate("/owner/dashboard");
+    } else {
+      navigate("/moderator/dashboard");
     }
   };
 
@@ -20,7 +34,13 @@ function DashboardTopbar() {
       <div></div>
 
       <div className="topbar-actions">
-        <div className="search-box">🔍 Search...</div>
+        <button
+          className="icon-btn"
+          onClick={goHome}
+          title="Home"
+        >
+          🏠
+        </button>
 
         <button
           className="icon-btn"
@@ -30,7 +50,6 @@ function DashboardTopbar() {
           🔔
         </button>
 
-        <div className="user-avatar">H</div>
       </div>
     </header>
   );

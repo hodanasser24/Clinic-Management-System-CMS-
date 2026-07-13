@@ -47,9 +47,7 @@ public class PrescriptionController : ControllerBase
     }
 
     /// <summary>
-    /// Export prescription as a downloadable text/PDF file.
-    /// Previously implemented in IPrescriptionService but no HTTP endpoint existed.
-    /// Patient and Doctor can download their own prescriptions.
+    /// Export a prescription as a downloadable PDF file.
     /// </summary>
     [Authorize(Roles = "Patient,Doctor,Admin,Owner")]
     [HttpGet("{id:int}/export")]
@@ -58,21 +56,22 @@ public class PrescriptionController : ControllerBase
     public async Task<IActionResult> Export(int id, CancellationToken ct)
     {
         var bytes = await _prescriptionService.ExportPdfAsync(id, ct);
-        return File(bytes, "application/octet-stream", $"prescription-{id}.txt");
+        return File(bytes, "application/pdf", $"prescription-{id}.pdf");
     }
 
     // ── Write ──────────────────────────────────────────────────────────────────
 
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Roles = "Doctor,Owner")]
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreatePrescriptionRequestDto dto, CancellationToken ct)
     {
-        var result = await _prescriptionService.CreateAsync(dto, ct);
+        var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        var result = await _prescriptionService.CreateAsync(dto, userId, ct);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Roles = "Doctor,Owner")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id, [FromBody] CreatePrescriptionRequestDto dto, CancellationToken ct)

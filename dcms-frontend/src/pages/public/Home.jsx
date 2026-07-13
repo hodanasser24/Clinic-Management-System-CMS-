@@ -1,3 +1,8 @@
+import { 
+  Star, MapPin, Phone, Mail, Clock,
+  CalendarPlus, Stethoscope, ClipboardList, HeartPulse,
+  ChevronDown, User
+} from "lucide-react";
 import "./Home.css";
 
 function Home() {
@@ -55,53 +60,102 @@ function Home() {
           </div>
 
           <div className="hero-trust">
-            <strong>★★★★★</strong>
+            <strong>
+              <Star size={16} fill="#facc15" stroke="#facc15" />
+              <Star size={16} fill="#facc15" stroke="#facc15" />
+              <Star size={16} fill="#facc15" stroke="#facc15" />
+              <Star size={16} fill="#facc15" stroke="#facc15" />
+              <Star size={16} fill="#facc15" stroke="#facc15" />
+            </strong>
             <span>Rated by 500+ patients</span>
           </div>
         </div>
 
         <div className="hero-visual">
-          <div className="floating-card doctor-card-preview">
-            <div className="avatar">👩‍⚕️</div>
-            <h3>Dr. Sara Ahmed</h3>
-            <p>Dental Surgery Specialist</p>
-            <div className="mini-tags">
-              <span>8 Years</span>
-              <span>4.9 Rating</span>
+          {/* Professional informational card */}
+          <div className="floating-card info-card">
+            <div className="info-card-icon">
+              <Stethoscope size={32} />
+            </div>
+            <h3>Your Smile, Our Priority</h3>
+            <p>
+              Comprehensive dental services with state-of-the-art technology and
+              a team of experienced specialists dedicated to your oral health.
+            </p>
+            <div className="info-card-highlights">
+              <div className="info-highlight">
+                <strong>15+</strong>
+                <span>Services</span>
+              </div>
+              <div className="info-highlight">
+                <strong>24/7</strong>
+                <span>Support</span>
+              </div>
+              <div className="info-highlight">
+                <strong>99%</strong>
+                <span>Satisfaction</span>
+              </div>
             </div>
           </div>
 
-          <div className="dashboard-mockup">
+          {/* Patient treatment flow card */}
+          <div className="dashboard-mockup treatment-flow-card">
             <div className="mockup-header">
-              <h3>Today’s Clinic</h3>
-              <span>Live</span>
+              <h3>Your Treatment Journey</h3>
             </div>
 
-            <div className="mockup-stats">
-              <div>
-                <strong>32</strong>
-                <span>Appointments</span>
+            <div className="treatment-steps">
+              <div className="treatment-step">
+                <div className="step-icon">
+                  <CalendarPlus size={22} />
+                </div>
+                <div className="step-content">
+                  <strong>Book Appointment</strong>
+                  <span>Schedule your visit online</span>
+                </div>
               </div>
-              <div>
-                <strong>24</strong>
-                <span>Completed</span>
-              </div>
-            </div>
 
-            <div className="appointment-preview">
-              <div>
-                <strong>Ahmed Ali</strong>
-                <p>10:30 AM • Teeth Cleaning</p>
+              <div className="step-connector">
+                <ChevronDown size={18} />
               </div>
-              <span className="confirmed">Confirmed</span>
-            </div>
 
-            <div className="appointment-preview">
-              <div>
-                <strong>Mona Hassan</strong>
-                <p>12:00 PM • Root Canal</p>
+              <div className="treatment-step">
+                <div className="step-icon">
+                  <Stethoscope size={22} />
+                </div>
+                <div className="step-content">
+                  <strong>Dental Consultation</strong>
+                  <span>Expert examination & diagnosis</span>
+                </div>
               </div>
-              <span className="pending">Pending</span>
+
+              <div className="step-connector">
+                <ChevronDown size={18} />
+              </div>
+
+              <div className="treatment-step">
+                <div className="step-icon">
+                  <ClipboardList size={22} />
+                </div>
+                <div className="step-content">
+                  <strong>Personalized Treatment</strong>
+                  <span>Tailored care plan for you</span>
+                </div>
+              </div>
+
+              <div className="step-connector">
+                <ChevronDown size={18} />
+              </div>
+
+              <div className="treatment-step">
+                <div className="step-icon">
+                  <HeartPulse size={22} />
+                </div>
+                <div className="step-content">
+                  <strong>Continuous Follow-up</strong>
+                  <span>Ongoing care & monitoring</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -175,21 +229,14 @@ function Home() {
         </div>
 
         <div className="doctors-grid">
-          {[
-            ["👨‍⚕️", "Dr. Ahmed Hassan", "Orthodontist", "8 Years Experience"],
-            ["👩‍⚕️", "Dr. Sara Ali", "Dental Surgery", "6 Years Experience"],
-            [
-              "👨‍⚕️",
-              "Dr. Omar Mohamed",
-              "Cosmetic Dentist",
-              "10 Years Experience",
-            ],
-          ].map((doctor) => (
-            <div className="doctor-card" key={doctor[1]}>
-              <div className="doctor-avatar">{doctor[0]}</div>
-              <h3>{doctor[1]}</h3>
-              <p>{doctor[2]}</p>
-              <span>{doctor[3]}</span>
+          {[1, 2, 3].map((index) => (
+            <div className="doctor-card" key={index}>
+              <div className="doctor-avatar">
+                <User size={44} />
+              </div>
+              <h3>Doctor Name</h3>
+              <p>Specialty</p>
+              <span>Experience</span>
               <a href="/login">Book Appointment</a>
             </div>
           ))}
@@ -226,15 +273,15 @@ function Home() {
         </div>
 
         <div className="contact-info">
-          <p>📍 Cairo, Egypt</p>
-          <p>📞 01012345678</p>
-          <p>✉️ info@dcms.com</p>
-          <p>🕘 09:00 AM - 09:00 PM</p>
+          <p><MapPin size={16} className="contact-icon" /> Cairo, Egypt</p>
+          <p><Phone size={16} className="contact-icon" /> 01012345678</p>
+          <p><Mail size={16} className="contact-icon" /> info@dcms.com</p>
+          <p><Clock size={16} className="contact-icon" /> 09:00 AM - 09:00 PM</p>
         </div>
       </section>
 
       <footer className="home-footer">
-        <p>© 2026 DCMS. All rights reserved.</p>
+        <p>&copy; 2026 DCMS. All rights reserved.</p>
       </footer>
     </main>
   );

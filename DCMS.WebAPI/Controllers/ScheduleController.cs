@@ -20,18 +20,28 @@ public class ScheduleController : ControllerBase
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Owner,Doctor")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateScheduleRequestDto dto, CancellationToken ct)
     {
+        if (User.IsInRole("Doctor"))
+        {
+            dto.DoctorId = GetUserId();
+        }
         var result = await _scheduleService.CreateAsync(dto, ct);
         return CreatedAtAction(nameof(GetByDoctor), new { doctorId = result.DoctorId }, result);
     }
 
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize(Roles = "Admin,Owner,Doctor")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateScheduleRequestDto dto, CancellationToken ct)
     {
+        if (User.IsInRole("Doctor"))
+        {
+            var schedule = await _scheduleService.GetByIdAsync(id, ct);
+            if (schedule.DoctorId != GetUserId())
+                return Forbid();
+        }
         var result = await _scheduleService.UpdateAsync(id, dto, ct);
         return Ok(result);
     }

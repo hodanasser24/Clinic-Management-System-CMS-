@@ -10,8 +10,10 @@ import {
   getBranches,
   getServices,
   getDoctors,
-  getAvailableSlots
+  getAvailableSlots,
+  getAvailableDates
 } from "../../../services/publicServices";
+import { formatTo12Hour } from "../../../utils/timeFormatter";
 import "./PatientAppointments.css";
 
 function PatientAppointments() {
@@ -39,6 +41,8 @@ function PatientAppointments() {
     startTime: "",
     notes: ""
   });
+  const [availableDates, setAvailableDates] = useState([]);
+  const [loadingDates, setLoadingDates] = useState(false);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [bookingError, setBookingError] = useState("");
@@ -73,7 +77,26 @@ function PatientAppointments() {
     getDoctors().then(setDoctors).catch(console.error);
   }, [userId]);
 
-  // Load slots when selection changes
+  // Load available dates when doctor and branch change
+  useEffect(() => {
+    const { doctorId, branchId } = bookingForm;
+    if (doctorId && branchId) {
+      setLoadingDates(true);
+      getAvailableDates(doctorId, branchId)
+        .then((dates) => {
+          setAvailableDates(dates || []);
+        })
+        .catch((err) => {
+          console.error("Error loading dates:", err);
+          setAvailableDates([]);
+        })
+        .finally(() => setLoadingDates(false));
+    } else {
+      setAvailableDates([]);
+    }
+  }, [bookingForm.doctorId, bookingForm.branchId]);
+
+  // Load slots when date selection changes
   useEffect(() => {
     const { doctorId, branchId, date } = bookingForm;
     if (doctorId && branchId && date) {
@@ -219,7 +242,7 @@ function PatientAppointments() {
                 <td>{item.serviceName}</td>
                 <td>{item.branchName}</td>
                 <td>{item.date}</td>
-                <td>{item.startTime}</td>
+                <td>{formatTo12Hour(item.startTime)}</td>
                 <td>
                   <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
                 </td>
@@ -317,16 +340,28 @@ function PatientAppointments() {
               </div>
 
               <div className="form-group">
-                <label>Date *</label>
-                <input
-                  type="date"
-                  min={new Date().toISOString().split("T")[0]}
+                <label>Available Dates *</label>
+                <select
                   value={bookingForm.date}
                   onChange={(e) =>
-                    setBookingForm({ ...bookingForm, date: e.target.value })
+                    setBookingForm({ ...bookingForm, date: e.target.value, startTime: "" })
                   }
+                  disabled={!bookingForm.doctorId || !bookingForm.branchId || loadingDates}
                   required
-                />
+                >
+                  <option value="">
+                    {loadingDates ? "Loading dates..." : "Select Date"}
+                  </option>
+                  {availableDates.map((d, index) => {
+                    const dateObj = new Date(d);
+                    const formatted = dateObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+                    return (
+                      <option key={index} value={d}>
+                        {formatted}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
 
               <div className="form-group">
@@ -344,7 +379,7 @@ function PatientAppointments() {
                   </option>
                   {availableSlots.map((slot, index) => (
                     <option key={index} value={slot.startTime}>
-                      {slot.startTime} - {slot.endTime}
+                      {formatTo12Hour(slot.startTime)} - {formatTo12Hour(slot.endTime)}
                     </option>
                   ))}
                 </select>
@@ -414,7 +449,7 @@ function PatientAppointments() {
               <div><strong>Service:</strong> {selectedAppt.serviceName}</div>
               <div><strong>Branch:</strong> {selectedAppt.branchName}</div>
               <div><strong>Date:</strong> {selectedAppt.date}</div>
-              <div><strong>Time:</strong> {selectedAppt.startTime}</div>
+              <div><strong>Time:</strong> {formatTo12Hour(selectedAppt.startTime)}</div>
               <div><strong>Status:</strong> <span className={`status ${selectedAppt.status.toLowerCase()}`}>{selectedAppt.status}</span></div>
               {selectedAppt.notes && <div><strong>Notes:</strong> {selectedAppt.notes}</div>}
             </div>

@@ -44,7 +44,7 @@ public class ConfirmAppointmentRequestValidator : AbstractValidator<ConfirmAppoi
 {
     public ConfirmAppointmentRequestValidator()
     {
-        RuleFor(x => x.AdminId).GreaterThan(0).WithMessage("AdminId must be a valid ID.");
+        // AdminId is resolved via JWT in the controller, so we don't validate it from the payload
     }
 }
 
@@ -52,7 +52,7 @@ public class RejectAppointmentRequestValidator : AbstractValidator<RejectAppoint
 {
     public RejectAppointmentRequestValidator()
     {
-        RuleFor(x => x.AdminId).GreaterThan(0).WithMessage("AdminId must be a valid ID.");
+        // AdminId is resolved via JWT in the controller, so we don't validate it from the payload
     }
 }
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../../services/apiClient";
 import { getUserId } from "../../../services/authServices";
+import { formatTo12Hour } from "../../../utils/timeFormatter";
 import "./Dashboard.css";
 
 function Dashboard() {
@@ -11,48 +12,56 @@ function Dashboard() {
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [noteError, setNoteError] = useState("");
+
+  const fetchData = async () => {
+    try {
+      const doctorId = getUserId();
+      const results = await Promise.allSettled([
+        apiClient.get("/api/Dashboard/doctor/daily"),
+        apiClient.get(`/api/Appointment/by-doctor/${doctorId}?page=1&pageSize=10`),
+        apiClient.get("/api/DoctorNote"),
+      ]);
+
+      if (results[0].status === "fulfilled") setStats(results[0].value.data);
+      if (results[1].status === "fulfilled") setSchedule(results[1].value.data.items || []);
+      if (results[2].status === "fulfilled") setNotes(results[2].value.data || []);
+      
+      const failed = results.filter(r => r.status === "rejected");
+      if (failed.length > 0) {
+        console.error("Some widgets failed to load", failed.map(r => r.reason));
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "An unexpected error occurred while loading dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const doctorId = getUserId();
-        const [statsRes, scheduleRes, notesRes] = await Promise.all([
-          apiClient.get("/api/Dashboard/doctor/daily"),
-          apiClient.get(
-            `/api/Appointment/by-doctor/${doctorId}?page=1&pageSize=10`,
-          ),
-          apiClient.get("/api/DoctorNote"),
-        ]);
-        setStats(statsRes.data);
-        setSchedule(scheduleRes.data.items || []);
-        setNotes(notesRes.data || []);
-      } catch (error) {
-        console.error("Failed to fetch doctor dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
+    setNoteError("");
     try {
-      const res = await apiClient.post("/api/DoctorNote", { content: newNote });
-      setNotes([res.data, ...notes]);
+      await apiClient.post("/api/DoctorNote", { content: newNote.trim() });
       setNewNote("");
-    } catch (error) {
-      console.error("Failed to add note:", error);
+      await fetchData();
+    } catch (err) {
+      setNoteError(err.response?.data?.message || err.response?.data?.title || "Failed to add note.");
     }
   };
 
   const handleDeleteNote = async (id) => {
+    setNoteError("");
     try {
       await apiClient.delete(`/api/DoctorNote/${id}`);
-      setNotes(notes.filter((n) => n.id !== id));
-    } catch (error) {
-      console.error("Failed to delete note:", error);
+      await fetchData();
+    } catch (err) {
+      setNoteError(err.response?.data?.message || "Failed to delete note.");
     }
   };
 
@@ -72,6 +81,8 @@ function Dashboard() {
           View Reports
         </button>
       </div>
+
+      {error && <p className="error">{error}</p>}
 
       <div className="doctor-stats-cards">
         <div className="doctor-stat-card">
@@ -118,7 +129,7 @@ function Dashboard() {
                 <div>
                   <strong>{item.patientName}</strong>
                   <p>
-                    {item.startTime} • {item.serviceName}
+                    {formatTo12Hour(item.startTime)} • {item.serviceName}
                   </p>
                 </div>
 
@@ -136,6 +147,8 @@ function Dashboard() {
 
         <div className="doctor-section doctor-notes-section">
           <h2>Today's Notes</h2>
+
+          {noteError && <p className="error">{noteError}</p>}
 
           <div className="doctor-note-input-container">
             <input

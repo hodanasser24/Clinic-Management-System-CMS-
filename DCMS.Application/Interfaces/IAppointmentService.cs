@@ -19,9 +19,10 @@ public interface IAppointmentService
     Task<PagedResultDto<AppointmentSummaryDto>> GetHistoryByPatientAsync(int patientId, int page, int pageSize, CancellationToken ct = default);
 
     Task<AppointmentResponseDto> BookAsync(AppointmentRequestDto dto, CancellationToken ct = default);
+    Task<AppointmentResponseDto> UpdateAsync(int id, AppointmentRequestDto dto, CancellationToken ct = default);
     Task<AppointmentResponseDto> RescheduleAsync(int id, int requestingUserId, RescheduleAppointmentRequestDto dto, CancellationToken ct = default);
-    Task<AppointmentResponseDto> ConfirmAsync(int id, ConfirmAppointmentRequestDto dto, CancellationToken ct = default);
-    Task<AppointmentResponseDto> RejectAsync(int id, RejectAppointmentRequestDto dto, CancellationToken ct = default);
+    Task<AppointmentResponseDto> ConfirmAsync(int id, int adminId, CancellationToken ct = default);
+    Task<AppointmentResponseDto> RejectAsync(int id, int adminId, CancellationToken ct = default);
     Task<AppointmentResponseDto> CancelAsync(int id, int requestingUserId, CancelAppointmentRequestDto dto, CancellationToken ct = default);
     Task<AppointmentResponseDto> MarkUrgentAsync(int id, MarkUrgentRequestDto dto, CancellationToken ct = default);
     Task<AppointmentResponseDto> UnmarkUrgentAsync(int id, int requestingDoctorId, CancellationToken ct = default);

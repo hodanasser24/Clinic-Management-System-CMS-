@@ -37,6 +37,7 @@ import Profile from "../pages/moderator/Profile/Profile";
 // Doctor
 import DoctorDashboard from "../pages/doctor/Dashboard/Dashboard";
 import DoctorAppointments from "../pages/doctor/Appointments/Appointments";
+import MySchedule from "../pages/doctor/MySchedule/MySchedule";
 import DoctorAppointmentDetails from "../pages/doctor/AppointmentDetails/AppointmentDetails";
 import DoctorPatients from "../pages/doctor/Patients/Patients";
 import DoctorPatientDetails from "../pages/doctor/PatientDetails/PatientDetails";
@@ -242,6 +243,15 @@ function AppRoutes() {
           element={
             <DashboardLayout>
               <DoctorAppointments />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/doctor/schedule"
+          element={
+            <DashboardLayout>
+              <MySchedule />
             </DashboardLayout>
           }
         />

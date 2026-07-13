@@ -79,7 +79,9 @@ public class AppointmentResponseDto
 public class AppointmentSummaryDto
 {
     public int Id { get; set; }
+    public int PatientId { get; set; }
     public string PatientName { get; set; } = null!;
+    public int DoctorId { get; set; }
     public string DoctorName { get; set; } = null!;
     public string BranchName { get; set; } = null!;
     public string ServiceName { get; set; } = null!;

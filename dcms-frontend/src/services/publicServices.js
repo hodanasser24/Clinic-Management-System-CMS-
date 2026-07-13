@@ -32,6 +32,10 @@ export async function getDoctors() {
   return fetchPublic("/public/doctors");
 }
 
+export async function getAvailableDates(doctorId, branchId) {
+  return fetchPublic(`/public/doctors/${doctorId}/available-dates?branchId=${branchId}`);
+}
+
 export async function getAvailableSlots(doctorId, branchId, date) {
   // date format should be YYYY-MM-DD
   return fetchPublic(`/public/doctors/${doctorId}/available-slots?branchId=${branchId}&date=${date}`);

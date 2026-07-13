@@ -8,6 +8,7 @@ import FilterDropdown from "../../../components/common/FilterDropdown/FilterDrop
 import SortDropdown from "../../../components/common/SortDropdown/SortDropdown";
 import DataTable from "../../../components/common/DataTable/DataTable";
 import Pagination from "../../../components/common/Pagination/Pagination";
+import { formatTo12Hour } from "../../../utils/timeFormatter";
 import "./Appointments.css";
 
 function Appointments() {
@@ -103,9 +104,10 @@ function Appointments() {
   // Map API data to table format
   const tableData = appointments.map((app) => ({
     id: app.id,
+    patientId: app.patientId,
     patientName: app.patientName,
     date: app.date,
-    time: app.startTime,
+    time: formatTo12Hour(app.startTime),
     serviceName: app.serviceName,
     status: (
       <span className={`status-badge ${getEnumStatusString(app.status)?.toLowerCase()}`}>
@@ -218,11 +220,11 @@ function Appointments() {
                 View
               </button>
 
-              <button onClick={() => navigate(`/doctor/patients/${row.id}`)}>
+              <button onClick={() => navigate(`/doctor/patients/${row.patientId}`)}>
                 Record
               </button>
 
-              <button onClick={() => navigate(`/doctor/prescriptions?appointmentId=${row.id}`)}>
+              <button onClick={() => navigate(`/doctor/prescriptions?patientId=${row.patientId}`)}>
                 Prescription
               </button>
             </div>

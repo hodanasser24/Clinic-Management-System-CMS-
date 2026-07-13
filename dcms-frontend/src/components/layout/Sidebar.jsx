@@ -23,6 +23,7 @@ function Sidebar() {
   const links = isDoctor
     ? [
         ["🏠 Dashboard", "/doctor/dashboard"],
+        ["⏱️ My Schedule", "/doctor/schedule"],
         ["📅 Appointments", "/doctor/appointments"],
         ["👥 Patients", "/doctor/patients"],
         ["🦷 Medical Records", "/doctor/medical-records"],

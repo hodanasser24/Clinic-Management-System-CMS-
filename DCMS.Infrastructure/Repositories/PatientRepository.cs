@@ -19,13 +19,13 @@ public class PatientRepository : GenericRepository<Patient>, IPatientRepository
         string? sortBy, bool sortDescending,
         CancellationToken ct = default)
     {
-        var query = _dbSet.AsNoTracking();
+        var query = _dbSet.AsNoTracking().Where(p => p.IsActive);
 
         if (id.HasValue)
             query = query.Where(p => p.Id == id.Value);
 
         if (!string.IsNullOrEmpty(name))
-            query = query.Where(p => p.FullName.Contains(name));
+            query = query.Where(p => EF.Functions.ILike(p.FullName, $"%{name}%"));
 
         if (!string.IsNullOrEmpty(phone))
             query = query.Where(p => p.Phone != null && p.Phone.Contains(phone));

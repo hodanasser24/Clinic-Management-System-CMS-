@@ -111,7 +111,7 @@ const PREVIEW_TOOTH_GEOMETRY = {
   },
 };
 
-import { getPatientDentalChart, updateChartNotes, upsertToothRecord, bulkUpsertToothRecords } from "../../../services/dentalChartServices";
+import { getPatientDentalChart, updateChartNotes, bulkUpsertToothRecords } from "../../../services/dentalChartServices";
 
 const backendToFrontendStatus = (status) => {
   switch (status) {
@@ -159,7 +159,7 @@ const frontendToBackendStatus = (status) => {
   }
 };
 
-function DentalChart({ patientId, readOnly = false }) {
+function DentalChart({ patientId, reportId = null, readOnly = false }) {
   const [selectedTooth, setSelectedTooth] = useState(null);
   const [toothStatus, setToothStatus] = useState({});
   const [chartNotes, setChartNotes] = useState("");
@@ -233,7 +233,7 @@ function DentalChart({ patientId, readOnly = false }) {
           treatmentType: null,
           treatmentDate: null,
           notes: null,
-          lastUpdatedInReportId: null
+          lastUpdatedInReportId: reportId || null
         };
       });
 
@@ -657,56 +657,12 @@ function DentalChart({ patientId, readOnly = false }) {
           </div>
           <div>
             <h1>Dental Chart</h1>
-            <p>Patient: Sarah Mohamed</p>
-            <span>ID: DCMS-2025-00125</span>
+            <p>Patient: {patientName}</p>
+            <span>ID: {patientId || "Not available"}</span>
           </div>
         </div>
 
-        <div className="chart-actions-top">
-          <button className="header-dropdown-btn">
-            Permanent Dentition
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              style={{ marginLeft: "8px" }}
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-          <button className="header-history-btn">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              style={{ marginRight: "8px", verticalAlign: "middle" }}
-            >
-              <path d="M12 8v4l3 3" />
-              <path d="M3.05 11a9 9 0 1 1 .45 4m-.45-4H3v3" />
-            </svg>
-            Treatment History
-          </button>
-          <button className="header-menu-btn">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <circle cx="12" cy="12" r="1.5" />
-              <circle cx="12" cy="5" r="1.5" />
-              <circle cx="12" cy="19" r="1.5" />
-            </svg>
-          </button>
-        </div>
+
       </div>
 
       <div className="chart-layout">

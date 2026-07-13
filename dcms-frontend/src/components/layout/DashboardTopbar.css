@@ -27,22 +27,7 @@
   gap: 14px;
 }
 
-.search-box {
-  width: 250px;
-  height: 46px;
-  padding: 0 18px;
-  border-radius: 14px;
-  background: rgba(5, 11, 24, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  color: #94a3b8;
-  display: flex;
-  align-items: center;
-  transition: 0.3s;
-}
 
-.search-box:hover {
-  border-color: #3b82f6;
-}
 
 .icon-btn {
   width: 46px;

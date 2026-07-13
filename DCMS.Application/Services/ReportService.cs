@@ -64,6 +64,12 @@ public class ReportService : IReportService
         if (appointment.Status != AppointmentStatus.Completed)
             throw new BusinessRuleException("Reports can only be created for completed appointments.");
 
+        if (appointment.PatientId != dto.PatientId)
+            throw new BusinessRuleException("The report patient does not match the appointment patient.");
+
+        if (appointment.DoctorId != dto.DoctorId)
+            throw new ForbiddenException("Only the appointment's assigned doctor can create its report.");
+
         var existing = await _uow.Reports.GetByAppointmentIdAsync(dto.AppointmentId, ct);
         if (existing != null)
             throw new ConflictException("A report already exists for this appointment.");

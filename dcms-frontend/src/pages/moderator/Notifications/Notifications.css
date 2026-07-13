@@ -3,6 +3,38 @@
   color: white;
 }
 
+.notifications-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 26px;
+  gap: 20px;
+}
+
+.notifications-page .page-header h1 {
+  color: white;
+  font-size: 30px;
+}
+
+.notifications-page .page-header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.notifications-page .page-header button {
+  border: 0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2f6bff, #6d3df5);
+}
+
+.notifications-page .page-header button.primary {
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+}
+
 .notification-list {
   display: grid;
   gap: 20px;

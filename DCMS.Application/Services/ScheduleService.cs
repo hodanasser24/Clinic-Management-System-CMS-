@@ -56,6 +56,25 @@ public class ScheduleService : IScheduleService
         };
     }
 
+    public async Task<List<string>> GetAvailableDatesAsync(int doctorId, int branchId, int weeksToGenerate = 4, CancellationToken ct = default)
+    {
+        var activeSchedules = await _uow.Schedules.FindAsync(s => s.DoctorId == doctorId && s.BranchId == branchId && s.IsActive, ct);
+        
+        var availableDates = new List<DateOnly>();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var endDate = today.AddDays(weeksToGenerate * 7);
+
+        for (var date = today; date <= endDate; date = date.AddDays(1))
+        {
+            if (activeSchedules.Any(s => s.DayOfWeek == date.DayOfWeek))
+            {
+                availableDates.Add(date);
+            }
+        }
+
+        return availableDates.Select(d => d.ToString("yyyy-MM-dd")).ToList();
+    }
+
     public async Task<List<AvailableSlotDto>> GetAvailableTimeSlotsAsync(
         int scheduleId, DateOnly date, CancellationToken ct = default)
     {

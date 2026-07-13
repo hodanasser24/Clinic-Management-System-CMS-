@@ -130,11 +130,11 @@ function Patients() {
                 View
               </button>
 
-              <button onClick={() => navigate("/doctor/medical-records", { state: { patientId: row.id } })}>
+              <button onClick={() => navigate(`/doctor/medical-records?patientId=${row.id}`)}>
                 Records
               </button>
 
-              <button onClick={() => navigate("/doctor/prescriptions", { state: { patientId: row.id } })}>
+              <button onClick={() => navigate(`/doctor/prescriptions?patientId=${row.id}`)}>
                 Prescription
               </button>
             </div>

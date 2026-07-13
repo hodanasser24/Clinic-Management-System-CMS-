@@ -105,7 +105,8 @@ public class DashboardService : IDashboardService
                 ServiceName   = svc?.Name           ?? string.Empty,
                 StartTime     = a.StartTime,
                 Status        = a.Status.ToString(),
-                IsUrgent      = a.IsUrgent
+                IsUrgent      = a.IsUrgent,
+                Revenue       = a.Status == AppointmentStatus.Completed && svc != null ? svc.Price : 0m
             });
         }
 
@@ -170,11 +171,11 @@ public class DashboardService : IDashboardService
     private static byte[] BuildCsv(List<AppointmentSummaryExportDto> items)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("AppointmentId,PatientName,DoctorName,BranchName,ServiceName,StartTime,Status,IsUrgent");
+        sb.AppendLine("AppointmentId,PatientName,DoctorName,BranchName,ServiceName,StartTime,Status,IsUrgent,Revenue");
         foreach (var a in items)
             sb.AppendLine(
                 $"{a.AppointmentId},{Esc(a.PatientName)},{Esc(a.DoctorName)}," +
-                $"{Esc(a.BranchName)},{Esc(a.ServiceName)},{a.StartTime},{a.Status},{a.IsUrgent}");
+                $"{Esc(a.BranchName)},{Esc(a.ServiceName)},{a.StartTime},{a.Status},{a.IsUrgent},{a.Revenue}");
         return Encoding.UTF8.GetBytes(sb.ToString());
     }
 

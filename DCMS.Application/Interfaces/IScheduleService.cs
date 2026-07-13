@@ -8,6 +8,7 @@ public interface IScheduleService
     Task<ScheduleResponseDto> GetByIdAsync(int id, CancellationToken ct = default);
     Task<PagedResultDto<ScheduleResponseDto>> GetByDoctorAsync(int doctorId, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResultDto<ScheduleResponseDto>> GetByBranchAsync(int branchId, int page, int pageSize, CancellationToken ct = default);
+    Task<List<string>> GetAvailableDatesAsync(int doctorId, int branchId, int weeksToGenerate = 4, CancellationToken ct = default);
     Task<List<AvailableSlotDto>> GetAvailableTimeSlotsAsync(int scheduleId, DateOnly date, CancellationToken ct = default);
     Task<ScheduleResponseDto> CreateAsync(CreateScheduleRequestDto dto, CancellationToken ct = default);
     Task<ScheduleResponseDto> UpdateAsync(int id, UpdateScheduleRequestDto dto, CancellationToken ct = default);
