@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiClient from "../../../services/apiClient";
 import "./PatientDetails.css";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 const getAge = (dateOfBirth) => {
   if (!dateOfBirth) return "Not recorded";
@@ -21,7 +22,7 @@ function PatientDetails() {
   useEffect(() => {
     apiClient.get(`/api/patients/${id}`)
       .then((response) => setPatient(response.data))
-      .catch((requestError) => setError(requestError.response?.data?.message || "Unable to load this patient's details."));
+      .catch((requestError) => setError(getFriendlyErrorMessage(requestError)));
   }, [id]);
 
   if (error) return <div className="patient-details-page">{error}</div>;

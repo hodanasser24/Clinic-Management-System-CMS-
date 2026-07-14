@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./CancelModal.css";
 
-export default function CancelModal({ isOpen, onClose, onConfirm }) {
+export default function CancelModal({ isOpen, onClose, onConfirm, errorMessage }) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
 
@@ -23,6 +23,8 @@ export default function CancelModal({ isOpen, onClose, onConfirm }) {
     onClose();
   };
 
+  const displayError = error || errorMessage;
+
   return (
     <div className="cancel-modal-overlay">
       <div className="cancel-modal-content">
@@ -38,10 +40,10 @@ export default function CancelModal({ isOpen, onClose, onConfirm }) {
               setReason(e.target.value);
               if (error) setError("");
             }}
-            className={error ? "input-error" : ""}
+            className={displayError ? "input-error" : ""}
             autoFocus
           />
-          {error && <span className="error-text">{error}</span>}
+          {displayError && <span className="error-text">{displayError}</span>}
         </div>
 
         <div className="cancel-modal-actions">

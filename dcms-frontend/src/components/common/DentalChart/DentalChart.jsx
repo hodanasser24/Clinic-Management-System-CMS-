@@ -159,7 +159,7 @@ const frontendToBackendStatus = (status) => {
   }
 };
 
-function DentalChart({ patientId, reportId = null, readOnly = false }) {
+function DentalChart({ patientId, reportId = null, appointmentId = null, readOnly = false }) {
   const [selectedTooth, setSelectedTooth] = useState(null);
   const [toothStatus, setToothStatus] = useState({});
   const [chartNotes, setChartNotes] = useState("");
@@ -238,11 +238,11 @@ function DentalChart({ patientId, reportId = null, readOnly = false }) {
       });
 
       if (recordsToUpdate.length > 0) {
-        await bulkUpsertToothRecords(patientId, recordsToUpdate);
+        await bulkUpsertToothRecords(patientId, appointmentId, recordsToUpdate);
       }
 
       if (chartNotes !== originalNotes) {
-        await updateChartNotes(patientId, chartNotes);
+        await updateChartNotes(patientId, appointmentId, chartNotes);
         setOriginalNotes(chartNotes);
       }
 

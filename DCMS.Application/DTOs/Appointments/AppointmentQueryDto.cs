@@ -12,6 +12,7 @@ public class AppointmentQueryDto
     public string? PatientPhone { get; set; }
 
     // Filters
+    public int? PatientId { get; set; }
     public AppointmentStatus? Status { get; set; }
     public int? DoctorId { get; set; }
     public DateOnly? FromDate { get; set; }

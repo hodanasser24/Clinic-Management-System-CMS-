@@ -11,7 +11,7 @@ public interface IOwnerService
     Task<AccountResponseDto> CreateAdminAccountAsync(CreateAdminAccountRequestDto dto, CancellationToken ct = default);
     Task<AccountResponseDto> DeactivateAccountAsync(int userId, DeactivateAccountRequestDto dto, CancellationToken ct = default);
     Task<AccountResponseDto> ReactivateAccountAsync(int userId, CancellationToken ct = default);
-    Task<PagedResultDto<DoctorAccountResponseDto>> GetAllDoctorsAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<PagedResultDto<DoctorAccountResponseDto>> GetAllDoctorsAsync(string? searchTerm, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResultDto<AccountResponseDto>> GetAllAdminsAsync(int page, int pageSize, CancellationToken ct = default);
 
     // Offer management — BR-58: only Owner may activate/deactivate

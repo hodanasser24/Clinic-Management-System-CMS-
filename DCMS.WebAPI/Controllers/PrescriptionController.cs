@@ -2,6 +2,7 @@ using DCMS.Application.DTOs.Prescriptions;
 using DCMS.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DCMS.WebAPI.Controllers;
 
@@ -17,13 +18,22 @@ public class PrescriptionController : ControllerBase
         _prescriptionService = prescriptionService;
     }
 
+    private int GetUserId() => int.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
+    private string GetUserRole() => User.FindFirstValue(System.Security.Claims.ClaimTypes.Role)!;
+
+    private int? GetCallerIdFilter()
+    {
+        var role = GetUserRole();
+        return (role == "Doctor" || role == "Owner") ? GetUserId() : null;
+    }
+
     // ── Read ───────────────────────────────────────────────────────────────────
 
     [Authorize(Roles = "Patient,Doctor,Admin,Owner")]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
-        var result = await _prescriptionService.GetByIdAsync(id, ct);
+        var result = await _prescriptionService.GetByIdAsync(id, GetCallerIdFilter(), ct);
         return Ok(result);
     }
 
@@ -31,7 +41,7 @@ public class PrescriptionController : ControllerBase
     [HttpGet("by-report/{reportId:int}")]
     public async Task<IActionResult> GetByReport(int reportId, CancellationToken ct)
     {
-        var result = await _prescriptionService.GetByReportIdAsync(reportId, ct);
+        var result = await _prescriptionService.GetByReportIdAsync(reportId, GetCallerIdFilter(), ct);
         return Ok(result);
     }
 
@@ -42,7 +52,7 @@ public class PrescriptionController : ControllerBase
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var result = await _prescriptionService.GetByPatientAsync(patientId, page, pageSize, ct);
+        var result = await _prescriptionService.GetByPatientAsync(patientId, page, pageSize, GetCallerIdFilter(), ct);
         return Ok(result);
     }
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiClient from "../../../services/apiClient";
 import "./PatientDetails.css";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 const formatDate = (value) =>
   value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value)) : "Not recorded";
@@ -47,7 +48,7 @@ function PatientDetails() {
         setPrescriptions(prescriptionsResponse.data?.items || prescriptionsResponse.data || []);
         setNotes(notesResponse.data || []);
       } catch (requestError) {
-        setError(requestError.response?.data?.message || "Unable to load this patient's details.");
+        setError(getFriendlyErrorMessage(requestError));
       } finally {
         setLoading(false);
       }
@@ -65,7 +66,7 @@ function PatientDetails() {
       setNotes((current) => [response.data, ...current]);
       setNoteContent("");
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Unable to save doctor note.");
+      setError(getFriendlyErrorMessage(requestError));
     } finally {
       setSavingNote(false);
     }
@@ -125,10 +126,6 @@ function PatientDetails() {
         <div className="patient-actions"><button className="success" onClick={handleSaveNote} disabled={savingNote || !noteContent.trim()}>{savingNote ? "Saving..." : "Save Notes"}</button></div>
       </div>
 
-      <div className="patient-actions">
-        <button onClick={() => navigate(`/doctor/medical-records?patientId=${patientId}`)}>Medical Record</button>
-        <button onClick={() => navigate(`/doctor/prescriptions?patientId=${patientId}`)}>Prescription</button>
-      </div>
     </div>
   );
 }

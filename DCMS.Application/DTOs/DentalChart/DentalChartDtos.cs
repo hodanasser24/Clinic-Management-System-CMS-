@@ -4,11 +4,13 @@ namespace DCMS.Application.DTOs.DentalChart;
 
 public class UpdateDentalChartRequestDto
 {
+    public int AppointmentId { get; set; }
     public string? Notes { get; set; }
 }
 
 public class UpsertToothRecordRequestDto
 {
+    public int AppointmentId { get; set; }
     public int ToothNumber { get; set; }
     public ToothStatus ToothStatus { get; set; }
     public TreatmentType? TreatmentType { get; set; }

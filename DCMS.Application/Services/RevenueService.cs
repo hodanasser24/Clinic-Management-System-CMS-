@@ -13,7 +13,7 @@ public class RevenueService : IRevenueService
 
     public async Task<RevenueSummaryDto> GetSummaryAsync(CancellationToken ct = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.Now);
         var weekStart = today.AddDays(-(int)today.DayOfWeek);
         var monthStart = new DateOnly(today.Year, today.Month, 1);
 

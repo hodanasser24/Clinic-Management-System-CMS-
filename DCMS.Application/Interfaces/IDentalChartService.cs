@@ -8,4 +8,5 @@ public interface IDentalChartService
     Task<DentalChartResponseDto> UpdateChartNotesAsync(int patientId, UpdateDentalChartRequestDto dto, int requestingDoctorId, CancellationToken ct = default);
     Task<DentalChartResponseDto> UpsertToothRecordAsync(int patientId, UpsertToothRecordRequestDto dto, int requestingDoctorId, CancellationToken ct = default);
     Task<DentalChartResponseDto> BulkUpsertToothRecordsAsync(int patientId, BulkUpsertToothRecordsRequestDto dto, int requestingDoctorId, CancellationToken ct = default);
+    Task<byte[]> ExportPdfAsync(int patientId, int requestingDoctorId, CancellationToken ct = default);
 }

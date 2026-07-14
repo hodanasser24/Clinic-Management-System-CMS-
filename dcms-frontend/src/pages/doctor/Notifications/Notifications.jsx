@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getNotifications, markNotificationAsRead, deleteNotification } from "../../../services/notificationServices";
 import "./Notifications.css";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -14,7 +15,7 @@ function Notifications() {
       const result = await getNotifications({ page: 1, pageSize: 50 });
       setNotifications(result?.items || []);
     } catch (err) {
-      setError(err.message || "Failed to fetch notifications.");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -45,7 +46,7 @@ function Notifications() {
     }
   };
 
-  if (loading) return <div className="notifications-page"><p>Loading notifications...</p></div>;
+  if (loading) return <div className="notifications-page"><div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading notifications...</div></div>;
   if (error) return <div className="notifications-page"><p className="error">{error}</p></div>;
 
   return (

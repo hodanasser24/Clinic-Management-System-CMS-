@@ -4,6 +4,7 @@ import apiClient from "../../../services/apiClient";
 import { getUserId } from "../../../services/authServices";
 import { formatTo12Hour } from "../../../utils/timeFormatter";
 import "./Dashboard.css";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -18,14 +19,24 @@ function Dashboard() {
   const fetchData = async () => {
     try {
       const doctorId = getUserId();
+      const todayStr = new Date().toISOString().split('T')[0];
       const results = await Promise.allSettled([
         apiClient.get("/api/Dashboard/doctor/daily"),
-        apiClient.get(`/api/Appointment/by-doctor/${doctorId}?page=1&pageSize=10`),
+        apiClient.get(`/api/Appointment/by-doctor/${doctorId}?FromDate=${todayStr}&ToDate=${todayStr}&page=1&pageSize=100`),
         apiClient.get("/api/DoctorNote"),
       ]);
 
       if (results[0].status === "fulfilled") setStats(results[0].value.data);
-      if (results[1].status === "fulfilled") setSchedule(results[1].value.data.items || []);
+      if (results[1].status === "fulfilled") {
+        const validAppointments = (results[1].value.data.items || [])
+          .filter(a => a.status === "Pending" || a.status === "Confirmed" || a.status === "Completed")
+          .sort((a, b) => {
+             const timeA = a.startTime ? a.startTime.split(':').join('') : '999999';
+             const timeB = b.startTime ? b.startTime.split(':').join('') : '999999';
+             return timeA.localeCompare(timeB);
+          });
+        setSchedule(validAppointments);
+      }
       if (results[2].status === "fulfilled") setNotes(results[2].value.data || []);
       
       const failed = results.filter(r => r.status === "rejected");
@@ -33,7 +44,7 @@ function Dashboard() {
         console.error("Some widgets failed to load", failed.map(r => r.reason));
       }
     } catch (err) {
-      setError(err.response?.data?.message || "An unexpected error occurred while loading dashboard.");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -51,7 +62,7 @@ function Dashboard() {
       setNewNote("");
       await fetchData();
     } catch (err) {
-      setNoteError(err.response?.data?.message || err.response?.data?.title || "Failed to add note.");
+      setNoteError(getFriendlyErrorMessage(err));
     }
   };
 
@@ -61,12 +72,12 @@ function Dashboard() {
       await apiClient.delete(`/api/DoctorNote/${id}`);
       await fetchData();
     } catch (err) {
-      setNoteError(err.response?.data?.message || "Failed to delete note.");
+      setNoteError(getFriendlyErrorMessage(err));
     }
   };
 
   if (loading) {
-    return <div className="doctor-dashboard-page">Loading...</div>;
+    return <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading...</div>;
   }
 
   return (
@@ -96,7 +107,7 @@ function Dashboard() {
         </div>
 
         <div className="doctor-stat-card">
-          <h3>Pending Cases</h3>
+          <h3>Waiting Patients</h3>
           <span>{stats?.pendingAppointments || 0}</span>
         </div>
 
@@ -114,9 +125,6 @@ function Dashboard() {
         <button onClick={() => navigate("/doctor/medical-records")}>
           Medical Records
         </button>
-        <button onClick={() => navigate("/doctor/prescriptions")}>
-          Prescriptions
-        </button>
       </div>
 
       <div className="doctor-dashboard-grid">
@@ -129,12 +137,12 @@ function Dashboard() {
                 <div>
                   <strong>{item.patientName}</strong>
                   <p>
-                    {formatTo12Hour(item.startTime)} • {item.serviceName}
+                    {formatTo12Hour(item.startTime)} - {formatTo12Hour(item.endTime)}
                   </p>
                 </div>
 
                 <span
-                  className={`doctor-status ${(item.status || "").toLowerCase()}`}
+                  className={`status-badge ${item.status.toLowerCase()}`}
                 >
                   {item.status}
                 </span>
@@ -193,11 +201,6 @@ function Dashboard() {
           <div className="review-box">
             <h3>Prescriptions Created</h3>
             <span>{stats?.prescriptionsCreated || 0}</span>
-          </div>
-
-          <div className="review-box">
-            <h3>Cases Need Follow Up</h3>
-            <span>{stats?.pendingAppointments || 0}</span>
           </div>
         </div>
       </div>

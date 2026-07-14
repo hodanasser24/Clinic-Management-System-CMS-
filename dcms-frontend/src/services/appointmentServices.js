@@ -7,11 +7,14 @@ export async function getPatientAppointments(patientId, params = {}) {
   if (params.pageSize) query.append("pageSize", params.pageSize);
   if (params.status) query.append("status", params.status);
   if (params.doctorId) query.append("doctorId", params.doctorId);
+  if (params.doctorName) query.append("doctorName", params.doctorName);
+  if (params.fromDate) query.append("fromDate", params.fromDate);
+  if (params.toDate) query.append("toDate", params.toDate);
   if (params.patientName) query.append("patientName", params.patientName);
   if (params.sortBy) query.append("sortBy", params.sortBy);
   if (params.sortDescending !== undefined) query.append("sortDescending", params.sortDescending);
   // Defaulting to newest first based on the requirements
-  query.append("sortDescending", "true");
+  if (params.sortDescending === undefined) query.append("sortDescending", "true");
 
   const queryString = query.toString() ? `?${query.toString()}` : "";
   const res = await apiClient.get(`/api/Appointment/by-patient/${patientId}${queryString}`);

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserId, getUserName } from "../../../services/authServices";
 import { getPatientProfile } from "../../../services/profileServices";
-import { getUpcomingPatientAppointments, getHistoryPatientAppointments } from "../../../services/appointmentServices";
+import { getUpcomingPatientAppointments, getPatientAppointments } from "../../../services/appointmentServices";
+import { getPatientPrescriptions } from "../../../services/prescriptionServices";
 import { getNotifications } from "../../../services/notificationServices";
 import "./PatientDashboard.css";
 
@@ -12,21 +13,24 @@ function PatientDashboard() {
   const [profile, setProfile] = useState(null);
   const [upcoming, setUpcoming] = useState([]);
   const [historyCount, setHistoryCount] = useState(0);
+  const [prescriptionCount, setPrescriptionCount] = useState(0);
   const [notificationCount, setNotificationCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadDashboardData() {
       try {
-        const [profileData, upcomingData, historyData, notificationsData] = await Promise.all([
+        const [profileData, upcomingData, historyData, prescriptionsData, notificationsData] = await Promise.all([
           getPatientProfile(),
           getUpcomingPatientAppointments(userId, { page: 1, pageSize: 5 }),
-          getHistoryPatientAppointments(userId, { page: 1, pageSize: 1 }),
+          getPatientAppointments(userId, { status: 4, page: 1, pageSize: 1 }), // 4 = Completed
+          getPatientPrescriptions(userId, { page: 1, pageSize: 1 }).catch(() => ({ totalCount: 0 })),
           getNotifications({ unreadOnly: true }).catch(() => ({ unreadCount: 0 }))
         ]);
         setProfile(profileData);
         setUpcoming(upcomingData?.items || upcomingData || []);
         setHistoryCount(historyData?.totalCount || 0);
+        setPrescriptionCount(prescriptionsData?.totalCount || 0);
         setNotificationCount(notificationsData?.unreadCount || 0);
       } catch (err) {
         console.error("Error loading patient dashboard data:", err);
@@ -70,7 +74,7 @@ function PatientDashboard() {
 
             <div className="patient-card">
               <h3>Prescriptions</h3>
-              <span>{profile?.medicalHistory ? 1 : 0}</span>
+              <span>{prescriptionCount}</span>
             </div>
 
             <div className="patient-card" onClick={() => navigate("/patient/notifications")} style={{ cursor: "pointer" }}>

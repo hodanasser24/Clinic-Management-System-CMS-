@@ -76,7 +76,7 @@ function Prescriptions() {
 
       <div className="prescription-list">
         {loading ? (
-          <p>Loading prescriptions...</p>
+          <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading prescriptions...</div>
         ) : prescriptions.length > 0 ? (
           prescriptions.map((item) => (
             <div className="prescription-card" key={item.id}>

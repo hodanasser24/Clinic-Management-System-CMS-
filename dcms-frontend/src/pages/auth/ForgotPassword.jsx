@@ -4,6 +4,7 @@ import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
 import { forgotPassword } from "../../services/authServices";
 import "./Login.css";
+import { getFriendlyErrorMessage } from "../../utils/errorMapper";
 
 function ForgotPassword() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ function ForgotPassword() {
         navigate("/reset-password");
       }, 2000);
     } catch (err) {
-      setError(err.message || "Failed to initiate password reset.");
+      setError(getFriendlyErrorMessage(err));
     }
   }
 

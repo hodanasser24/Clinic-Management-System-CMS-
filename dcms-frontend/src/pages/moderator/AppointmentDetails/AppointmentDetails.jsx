@@ -4,6 +4,7 @@ import { getAppointmentById, confirmAppointment, rejectAppointment, cancelAppoin
 import { formatTo12Hour } from "../../../utils/timeFormatter";
 import CancelModal from "../../../components/ui/CancelModal/CancelModal";
 import "./AppointmentDetails.css";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 function AppointmentDetails() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ function AppointmentDetails() {
       const data = await getAppointmentById(id);
       setAppointment(data);
     } catch (err) {
-      setError(err.message || "Failed to load appointment details.");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -70,7 +71,7 @@ function AppointmentDetails() {
     }
   };
 
-  if (loading) return <div className="appointment-details-page"><p>Loading details...</p></div>;
+  if (loading) return <div className="appointment-details-page"><div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading details...</div></div>;
   if (error) return <div className="appointment-details-page"><p className="error">{error}</p></div>;
   if (!appointment) return <div className="appointment-details-page"><p>Appointment not found.</p></div>;
 

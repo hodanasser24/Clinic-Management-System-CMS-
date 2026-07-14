@@ -4,6 +4,7 @@ import "./Profile.css";
 
 // Assuming we add these to profileServices.js:
 import { getAuthToken } from "../../../services/authServices";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 async function getDoctorProfile() {
   const token = getAuthToken();
@@ -50,7 +51,7 @@ function Profile() {
         experienceYears: data.experienceYears || 0,
       });
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -67,11 +68,11 @@ function Profile() {
       setIsEditing(false);
       loadProfile();
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err));
     }
   };
 
-  if (loading) return <div className="doctor-profile-page"><p>Loading profile...</p></div>;
+  if (loading) return <div className="doctor-profile-page"><div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading profile...</div></div>;
 
   return (
     <div className="doctor-profile-page">

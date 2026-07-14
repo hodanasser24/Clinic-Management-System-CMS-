@@ -14,6 +14,8 @@ import {
   getAvailableDates
 } from "../../../services/publicServices";
 import { formatTo12Hour } from "../../../utils/timeFormatter";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
+import CancelModal from "../../../components/ui/CancelModal/CancelModal";
 import "./PatientAppointments.css";
 
 function PatientAppointments() {
@@ -28,8 +30,11 @@ function PatientAppointments() {
   const [doctors, setDoctors] = useState([]);
 
   // Filters & State
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [doctorQuery, setDoctorQuery] = useState("");
+  const [dateQuery, setDateQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Booking Wizard State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -51,7 +56,7 @@ function PatientAppointments() {
   // Cancellation State
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [cancelId, setCancelId] = useState(null);
-  const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState("");
 
   // Details Modal State
   const [selectedAppt, setSelectedAppt] = useState(null);
@@ -60,8 +65,30 @@ function PatientAppointments() {
   const loadAppointments = async () => {
     setLoading(true);
     try {
-      const res = await getPatientAppointments(userId);
-      setAppointments(res?.items || res || []);
+      const params = {
+        page: page,
+        pageSize: 10,
+        sortDescending: true
+      };
+      
+      if (doctorQuery) params.doctorName = doctorQuery;
+      if (dateQuery) {
+        params.fromDate = dateQuery;
+        params.toDate = dateQuery;
+      }
+      if (statusFilter && statusFilter !== "All") {
+        const statusMap = {
+          "Pending": 0,
+          "Confirmed": 1,
+          "Cancelled": 3,
+          "Completed": 4
+        };
+        params.status = statusMap[statusFilter];
+      }
+
+      const res = await getPatientAppointments(userId, params);
+      setAppointments(res?.items || []);
+      setTotalPages(Math.ceil((res?.totalCount || 0) / 10));
     } catch (err) {
       console.error("Failed to load appointments:", err);
     } finally {
@@ -71,6 +98,9 @@ function PatientAppointments() {
 
   useEffect(() => {
     loadAppointments();
+  }, [userId, page, doctorQuery, dateQuery, statusFilter]);
+
+  useEffect(() => {
     // Load lists for wizard
     getBranches().then(setBranches).catch(console.error);
     getServices().then(setServices).catch(console.error);
@@ -155,35 +185,19 @@ function PatientAppointments() {
     }
   };
 
-  const handleCancelSubmit = async (e) => {
-    e.preventDefault();
+  const handleCancelConfirm = async (reason) => {
+    setCancelError("");
     try {
-      await cancelAppointment(cancelId, cancelReason || "Cancelled by patient");
+      await cancelAppointment(cancelId, reason);
       setIsCancelOpen(false);
-      setCancelReason("");
       loadAppointments();
     } catch (err) {
-      alert(err.message || "Cancellation failed.");
+      setCancelError(getFriendlyErrorMessage(err));
     }
   };
 
-  // Filtering
-  let filtered = appointments.filter(
-    (app) =>
-      app.doctorName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.serviceName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.branchName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (statusFilter !== "All") {
-    if (statusFilter === "Upcoming") {
-      filtered = filtered.filter((app) =>
-        ["Confirmed", "Pending"].includes(app.status)
-      );
-    } else {
-      filtered = filtered.filter((app) => app.status === statusFilter);
-    }
-  }
+  // Filtering is now handled completely by the server
+  const filtered = appointments;
 
   return (
     <div className="patient-appointments-page">
@@ -197,17 +211,24 @@ function PatientAppointments() {
       <div className="toolbar">
         <input
           type="text"
-          placeholder="Search doctor, service, branch..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by Doctor Name..."
+          value={doctorQuery}
+          onChange={(e) => { setDoctorQuery(e.target.value); setPage(1); }}
+        />
+
+        <input
+          type="date"
+          value={dateQuery}
+          onChange={(e) => { setDateQuery(e.target.value); setPage(1); }}
         />
 
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
         >
-          <option value="All">All Statuses</option>
-          <option value="Upcoming">Upcoming</option>
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Confirmed">Confirmed</option>
           <option value="Completed">Completed</option>
           <option value="Cancelled">Cancelled</option>
         </select>
@@ -222,56 +243,73 @@ function PatientAppointments() {
           No appointments found matching the filters.
         </div>
       ) : (
-        <table className="appointments-table">
-          <thead>
-            <tr>
-              <th>Doctor</th>
-              <th>Service</th>
-              <th>Branch</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+        <>
+          <table className="appointments-table">
+            <thead>
+              <tr>
+                <th>Doctor</th>
+                <th>Service</th>
+                <th>Branch</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            {filtered.map((item) => (
-              <tr key={item.id}>
-                <td>Dr. {item.doctorName}</td>
-                <td>{item.serviceName}</td>
-                <td>{item.branchName}</td>
-                <td>{item.date}</td>
-                <td>{formatTo12Hour(item.startTime)}</td>
-                <td>
-                  <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
-                </td>
-                <td>
-                  <button
-                    onClick={() => {
-                      setSelectedAppt(item);
-                      setIsDetailsOpen(true);
-                    }}
-                  >
-                    View
-                  </button>
-
-                  {["Pending", "Confirmed"].includes(item.status) && (
+            <tbody>
+              {filtered.map((item) => (
+                <tr key={item.id}>
+                  <td>Dr. {item.doctorName}</td>
+                  <td>{item.serviceName}</td>
+                  <td>{item.branchName}</td>
+                  <td>{item.date}</td>
+                  <td>{formatTo12Hour(item.startTime)}</td>
+                  <td>
+                    <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
+                  </td>
+                  <td>
                     <button
-                      className="cancel"
                       onClick={() => {
-                        setCancelId(item.id);
-                        setIsCancelOpen(true);
+                        setSelectedAppt(item);
+                        setIsDetailsOpen(true);
                       }}
                     >
-                      Cancel
+                      View
                     </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+                    {["Pending", "Confirmed"].includes(item.status) && (
+                      <button
+                        className="cancel"
+                        onClick={() => {
+                          setCancelId(item.id);
+                          setCancelError("");
+                          setIsCancelOpen(true);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {totalPages > 1 && (
+            <div className="pagination" style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "1rem" }}>
+              <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+                Previous
+              </button>
+              <span style={{ padding: "0.5rem" }}>
+                Page {page} of {totalPages}
+              </span>
+              <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Booking Wizard Modal */}
@@ -410,34 +448,12 @@ function PatientAppointments() {
       )}
 
       {/* Cancellation Modal */}
-      {isCancelOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content glass-card">
-            <h2>Cancel Appointment</h2>
-            <form onSubmit={handleCancelSubmit}>
-              <p>Are you sure you want to cancel this appointment? This action cannot be undone.</p>
-              <div className="form-group" style={{ marginTop: "1rem" }}>
-                <label>Reason for Cancellation</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Scheduling conflict"
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="secondary-btn" onClick={() => setIsCancelOpen(false)}>
-                  Go Back
-                </button>
-                <button type="submit" className="danger-btn">
-                  Yes, Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CancelModal
+        isOpen={isCancelOpen}
+        onClose={() => { setIsCancelOpen(false); setCancelError(""); }}
+        onConfirm={handleCancelConfirm}
+        errorMessage={cancelError}
+      />
 
       {/* Details View Modal */}
       {isDetailsOpen && selectedAppt && (

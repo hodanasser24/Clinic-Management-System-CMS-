@@ -45,10 +45,10 @@ public class AppointmentController : ControllerBase
     [HttpGet("by-patient/{patientId:int}")]
     public async Task<IActionResult> GetByPatient(
         int patientId,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] AppointmentQueryDto query,
         CancellationToken ct = default)
     {
-        var result = await _appointmentService.GetByPatientAsync(patientId, page, pageSize, ct);
+        var result = await _appointmentService.GetByPatientAsync(patientId, query, ct);
         return Ok(result);
     }
 
@@ -205,7 +205,7 @@ public class AppointmentController : ControllerBase
     /// SRS §4.2 (Admin) and §4.3 (Doctor) — both roles can mark attendance.
     /// BR-37: validated inside AppointmentService that appointment date+time has passed.
     /// </summary>
-    [Authorize(Roles = "Admin,Doctor")]   // FIX: Doctor was missing, only Admin was allowed
+    [Authorize(Roles = "Admin,Doctor,Owner")]
     [HttpPut("{id:int}/mark-attendance")]
     public async Task<IActionResult> MarkAttendance(
         int id, [FromBody] MarkAttendanceRequestDto dto, CancellationToken ct)

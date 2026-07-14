@@ -18,18 +18,20 @@ public class DashboardService : IDashboardService
 
     public DashboardService(IUnitOfWork uow) => _uow = uow;
 
-    public async Task<DashboardSummaryDto> GetSummaryAsync(CancellationToken ct = default)
+    public async Task<DashboardSummaryDto> GetSummaryAsync(int? doctorId = null, CancellationToken ct = default)
     {
-        var today     = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today     = DateOnly.FromDateTime(DateTime.Now);
         var weekStart = today.AddDays(-(int)today.DayOfWeek);
 
         // ── Counts via CountAsync (no record loading) ──────────────────────────
-        var totalToday     = await _uow.Appointments.CountAsync(a => a.Date == today, ct);
-        var totalThisWeek  = await _uow.Appointments.CountAsync(a => a.Date >= weekStart && a.Date <= today, ct);
-        var pending        = await _uow.Appointments.CountAsync(a => a.Status == AppointmentStatus.Pending, ct);
-        var confirmed      = await _uow.Appointments.CountAsync(a => a.Status == AppointmentStatus.Confirmed, ct);
-        var urgent         = await _uow.Appointments.CountAsync(a => a.IsUrgent, ct);
-        var totalPatients  = await _uow.Patients.CountAsync(ct: ct);
+        var totalToday     = await _uow.Appointments.CountAsync(a => a.Date == today && (!doctorId.HasValue || a.DoctorId == doctorId.Value), ct);
+        var totalThisWeek  = await _uow.Appointments.CountAsync(a => a.Date >= weekStart && a.Date <= today && (!doctorId.HasValue || a.DoctorId == doctorId.Value), ct);
+        var pending        = await _uow.Appointments.CountAsync(a => a.Status == AppointmentStatus.Pending && (!doctorId.HasValue || a.DoctorId == doctorId.Value), ct);
+        var confirmed      = await _uow.Appointments.CountAsync(a => a.Status == AppointmentStatus.Confirmed && (!doctorId.HasValue || a.DoctorId == doctorId.Value), ct);
+        var urgent         = await _uow.Appointments.CountAsync(a => a.IsUrgent && (!doctorId.HasValue || a.DoctorId == doctorId.Value), ct);
+        var totalPatients  = doctorId.HasValue 
+            ? await _uow.Appointments.FindAsync(a => a.DoctorId == doctorId.Value, ct).ContinueWith(t => t.Result.Select(a => a.PatientId).Distinct().Count())
+            : await _uow.Patients.CountAsync(ct: ct);
         var totalDoctors   = await _uow.Doctors.CountAsync(ct: ct);
         var activeBranches = await _uow.Branches.CountAsync(b => b.IsActive, ct);
         var activeServices = await _uow.Services.CountAsync(s => s.IsActive, ct);
@@ -48,13 +50,13 @@ public class DashboardService : IDashboardService
         // ── Revenue: load only completed appointments in date ranges ───────────
         // These must be loaded to access Service.Price — but scoped to date ranges.
         var completedToday = await _uow.Appointments.FindAsync(
-            a => a.Status == AppointmentStatus.Completed && a.Date == today, ct);
+            a => a.Status == AppointmentStatus.Completed && a.Date == today && (!doctorId.HasValue || a.DoctorId == doctorId.Value), ct);
 
         var completedThisWeek = await _uow.Appointments.FindAsync(
-            a => a.Status == AppointmentStatus.Completed && a.Date >= weekStart && a.Date <= today, ct);
+            a => a.Status == AppointmentStatus.Completed && a.Date >= weekStart && a.Date <= today && (!doctorId.HasValue || a.DoctorId == doctorId.Value), ct);
 
         var completedAll = await _uow.Appointments.FindAsync(
-            a => a.Status == AppointmentStatus.Completed, ct);
+            a => a.Status == AppointmentStatus.Completed && (!doctorId.HasValue || a.DoctorId == doctorId.Value), ct);
 
         // Load service prices for the fetched appointments
         decimal todayRevenue = 0, weekRevenue = 0, totalRevenue = 0;
@@ -87,10 +89,14 @@ public class DashboardService : IDashboardService
     }
 
     public async Task<DailyReportDto> GetDailyReportAsync(
-        DateOnly date, CancellationToken ct = default)
+        DateOnly date, int? doctorId = null, CancellationToken ct = default)
     {
         // Scoped to a single date — acceptable data volume
         var appointments = (await _uow.Appointments.GetByDateAsync(date, ct)).ToList();
+        if (doctorId.HasValue)
+        {
+            appointments = appointments.Where(a => a.DoctorId == doctorId.Value).ToList();
+        }
 
         var items = new List<AppointmentSummaryExportDto>();
         foreach (var a in appointments)
@@ -133,13 +139,13 @@ public class DashboardService : IDashboardService
     }
 
     public async Task<WeeklyReportDto> GetWeeklyReportAsync(
-        DateOnly weekStart, CancellationToken ct = default)
+        DateOnly weekStart, int? doctorId = null, CancellationToken ct = default)
     {
         var weekEnd = weekStart.AddDays(6);
         var daily   = new List<DailyReportDto>();
 
         for (var d = weekStart; d <= weekEnd; d = d.AddDays(1))
-            daily.Add(await GetDailyReportAsync(d, ct));
+            daily.Add(await GetDailyReportAsync(d, doctorId, ct));
 
         return new WeeklyReportDto
         {
@@ -155,16 +161,16 @@ public class DashboardService : IDashboardService
     }
 
     public async Task<byte[]> ExportDailyReportAsCsvAsync(
-        DateOnly date, CancellationToken ct = default)
+        DateOnly date, int? doctorId = null, CancellationToken ct = default)
     {
-        var report = await GetDailyReportAsync(date, ct);
+        var report = await GetDailyReportAsync(date, doctorId, ct);
         return BuildCsv(report.Appointments);
     }
 
     public async Task<byte[]> ExportWeeklyReportAsCsvAsync(
-        DateOnly weekStart, CancellationToken ct = default)
+        DateOnly weekStart, int? doctorId = null, CancellationToken ct = default)
     {
-        var report = await GetWeeklyReportAsync(weekStart, ct);
+        var report = await GetWeeklyReportAsync(weekStart, doctorId, ct);
         return BuildCsv(report.DailyBreakdown.SelectMany(d => d.Appointments).ToList());
     }
 
@@ -183,17 +189,24 @@ public class DashboardService : IDashboardService
 
     public async Task<DoctorDailyDashboardDto> GetDoctorDailyTrackingAsync(int doctorId, CancellationToken ct = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var todayStartUtc = DateTime.UtcNow.Date;
-        var tomorrowStartUtc = todayStartUtc.AddDays(1);
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var todayStartLocal = DateTime.Now.Date;
+        var tomorrowStartLocal = todayStartLocal.AddDays(1);
 
         // 1. Appointments for today
         var appointmentsToday = (await _uow.Appointments.FindAsync(
             a => a.DoctorId == doctorId && a.Date == today, ct)).ToList();
 
-        var totalAppointments = appointmentsToday.Count;
+        var totalAppointments = appointmentsToday.Count(a => 
+            a.Status == AppointmentStatus.Pending || 
+            a.Status == AppointmentStatus.Confirmed || 
+            a.Status == AppointmentStatus.Completed);
+
         var completedAppointments = appointmentsToday.Count(a => a.Status == AppointmentStatus.Completed);
-        var pendingAppointments = appointmentsToday.Count(a => a.Status == AppointmentStatus.Pending);
+        
+        // This is mapped to "Waiting Patients" in the UI (approved and waiting)
+        var pendingAppointments = appointmentsToday.Count(a => a.Status == AppointmentStatus.Confirmed);
+        
         var cancelledAppointments = appointmentsToday.Count(a => a.Status == AppointmentStatus.Cancelled);
 
         // Patients seen today (distinct from completed appointments)
@@ -204,6 +217,10 @@ public class DashboardService : IDashboardService
             .Count();
 
         // 2. Reports created today
+        // Note: CreatedAt is an audit timestamp (UTC), so we must convert the local boundaries to UTC for accurate DB queries.
+        var todayStartUtc = todayStartLocal.ToUniversalTime();
+        var tomorrowStartUtc = tomorrowStartLocal.ToUniversalTime();
+
         var reportsToday = (await _uow.Reports.FindAsync(
             r => r.DoctorId == doctorId && r.CreatedAt >= todayStartUtc && r.CreatedAt < tomorrowStartUtc, ct)).ToList();
 

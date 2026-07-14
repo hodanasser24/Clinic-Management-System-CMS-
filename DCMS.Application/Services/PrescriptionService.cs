@@ -17,7 +17,7 @@ public class PrescriptionService : IPrescriptionService
         _uow = uow;
     }
 
-    public async Task<PrescriptionResponseDto> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<PrescriptionResponseDto> GetByIdAsync(int id, int? callerId = null, CancellationToken ct = default)
     {
         var prescription = await _uow.Prescriptions.GetByIdWithItemsAsync(id, ct);
         if (prescription == null) throw new NotFoundException($"Prescription {id} not found.");
@@ -26,10 +26,13 @@ public class PrescriptionService : IPrescriptionService
         if (prescription.Report == null)
             prescription.Report = await _uow.Reports.GetByIdAsync(prescription.ReportId, ct);
             
+        if (callerId.HasValue && prescription.Report.DoctorId != callerId.Value)
+            throw new ForbiddenException("You are only allowed to view your own prescriptions.");
+
         return MapToResponse(prescription);
     }
 
-    public async Task<PrescriptionResponseDto> GetByReportIdAsync(int reportId, CancellationToken ct = default)
+    public async Task<PrescriptionResponseDto> GetByReportIdAsync(int reportId, int? callerId = null, CancellationToken ct = default)
     {
         var prescription = await _uow.Prescriptions.GetByReportIdWithItemsAsync(reportId, ct);
         if (prescription == null) throw new NotFoundException($"No prescription found for report {reportId}.");
@@ -37,12 +40,15 @@ public class PrescriptionService : IPrescriptionService
         if (prescription.Report == null)
             prescription.Report = await _uow.Reports.GetByIdAsync(prescription.ReportId, ct);
             
+        if (callerId.HasValue && prescription.Report.DoctorId != callerId.Value)
+            throw new ForbiddenException("You are only allowed to view your own prescriptions.");
+
         return MapToResponse(prescription);
     }
 
-    public async Task<PagedResultDto<PrescriptionResponseDto>> GetByPatientAsync(int patientId, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResultDto<PrescriptionResponseDto>> GetByPatientAsync(int patientId, int page, int pageSize, int? callerId = null, CancellationToken ct = default)
     {
-        var pagedResult = await _uow.Prescriptions.GetByPatientWithDetailsAsync(patientId, page, pageSize, ct);
+        var pagedResult = await _uow.Prescriptions.GetByPatientWithDetailsAsync(patientId, page, pageSize, callerId, ct);
         return new PagedResultDto<PrescriptionResponseDto>
         {
             TotalCount = pagedResult.TotalCount,
@@ -59,6 +65,10 @@ public class PrescriptionService : IPrescriptionService
         var report = await _uow.Reports.GetByIdAsync(dto.ReportId, ct);
         if (report == null)
             throw new NotFoundException("Report not found. A prescription must be linked to an existing report.");
+
+        var appointment = await _uow.Appointments.GetByIdAsync(report.AppointmentId, ct);
+        if (appointment == null || appointment.Status != DCMS.Domain.Enums.AppointmentStatus.Confirmed)
+            throw new BusinessRuleException("Prescriptions can only be created during an active confirmed appointment.");
 
         if (report.DoctorId != requestingDoctorId)
             throw new ForbiddenException("Only the report's author can prescribe medication for it.");
@@ -126,10 +136,19 @@ public class PrescriptionService : IPrescriptionService
         if (report?.DoctorId != requestingDoctorId)
             throw new ForbiddenException("Only the prescribing doctor can update this prescription.");
 
+        var appointment = await _uow.Appointments.GetByIdAsync(report!.AppointmentId, ct);
+        if (appointment == null || appointment.Status != DCMS.Domain.Enums.AppointmentStatus.Confirmed)
+            throw new BusinessRuleException("Clinical data can only be edited during an active confirmed appointment.");
+
         prescription.GeneralInstructions = dto.GeneralInstructions;
 
-        // Replace items
+        // Replace items: explicitly remove existing to avoid foreign key errors
+        foreach (var existingItem in prescription.Items.ToList())
+        {
+            _uow.PrescriptionItems.Remove(existingItem);
+        }
         prescription.Items.Clear();
+        
         foreach (var item in dto.Items ?? [])
         {
             prescription.Items.Add(new PrescriptionItem

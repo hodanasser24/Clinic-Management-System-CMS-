@@ -2,26 +2,40 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../../services/apiClient";
 import { getUserId } from "../../../services/authServices";
+import { formatTo12Hour } from "../../../utils/timeFormatter";
 import "./MedicalRecords.css";
 import DentalChart from "../../../components/common/DentalChart/DentalChart";
 
 function MedicalRecords() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [completedAppointments, setCompletedAppointments] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPatientData = async () => {
       try {
         const userId = getUserId();
-        const [profileRes, historyRes] = await Promise.all([
+        const [profileRes, historyRes, reportsRes, prescriptionsRes] = await Promise.all([
           apiClient.get("/api/Profile/patient"),
           apiClient.get(`/api/Appointment/history/by-patient/${userId}?page=1&pageSize=50`),
+          apiClient.get(`/api/Report/by-patient/${userId}?page=1&pageSize=50`),
+          apiClient.get(`/api/Prescription/by-patient/${userId}?page=1&pageSize=50`)
         ]);
 
+        const appointments = (historyRes.data?.items || []).filter(a => a.status === "Completed");
+
         setProfile(profileRes.data);
-        setHistory(historyRes.data.items || []);
+        setCompletedAppointments(appointments);
+        setReports(reportsRes.data?.items || []);
+        setPrescriptions(prescriptionsRes.data?.items || []);
+        
+        if (appointments.length > 0) {
+          setSelectedAppointmentId(String(appointments[0].id));
+        }
       } catch (error) {
         console.error("Failed to fetch patient medical records:", error);
       } finally {
@@ -32,8 +46,11 @@ function MedicalRecords() {
     fetchPatientData();
   }, []);
 
+  const selectedReport = reports.find((report) => String(report.appointmentId) === String(selectedAppointmentId));
+  const selectedPrescription = prescriptions.find((prescription) => String(prescription.reportId) === String(selectedReport?.id));
+
   if (loading) {
-    return <div className="patient-medical-page">Loading...</div>;
+    return <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading...</div>;
   }
 
   return (
@@ -72,39 +89,52 @@ function MedicalRecords() {
       </div>
 
       <div className="medical-card">
-        <h2>Dental Chart</h2>
-        <DentalChart readOnly={true} patientId={profile?.id} />
-      </div>
-
-      <div className="medical-card">
-        <h2>Medical History</h2>
-
-        {history.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Doctor</th>
-                <th>Diagnosis</th>
-                <th>Treatment</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {history.map((visit) => (
-                <tr key={visit.id}>
-                  <td>{visit.appointmentDate || visit.startTime || "N/A"}</td>
-                  <td>{visit.doctorName || "N/A"}</td>
-                  <td>{visit.serviceName || "N/A"}</td>
-                  <td>{visit.status || "Completed"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <h2>Completed Visit</h2>
+        {completedAppointments.length ? (
+          <select value={selectedAppointmentId} onChange={(event) => setSelectedAppointmentId(event.target.value)}>
+            {completedAppointments.map((appointment) => (
+              <option key={appointment.id} value={appointment.id}>
+                {appointment.date} {formatTo12Hour(appointment.startTime)} — {appointment.serviceName} (Dr. {appointment.doctorName})
+              </option>
+            ))}
+          </select>
         ) : (
-          <p>No medical history found.</p>
+          <p>No completed visits found in your history.</p>
         )}
       </div>
+
+      {selectedAppointmentId && <>
+        <div className="medical-card"><h2>Dental Chart Snapshot</h2><DentalChart patientId={profile?.id} reportId={selectedReport?.id || null} readOnly={true} /></div>
+        
+        {selectedReport ? (
+          <>
+            <div className="medical-card"><h2>Medical Report</h2>
+              <div className="readonly-report-content">
+                <p><strong>Diagnosis:</strong><br/> {selectedReport.diagnosis}</p>
+                {selectedReport.treatmentPlan && <p><strong>Treatment Plan:</strong><br/> {selectedReport.treatmentPlan}</p>}
+                {selectedReport.treatment && <p><strong>Medications (Notes):</strong><br/> {selectedReport.treatment}</p>}
+              </div>
+            </div>
+            
+            <div className="medical-card"><h2>Prescription</h2>
+              {selectedPrescription ? (
+                <div className="readonly-prescription-content">
+                   {selectedPrescription.generalInstructions && <p><strong>Instructions:</strong> {selectedPrescription.generalInstructions}</p>}
+                   <ul>
+                     {selectedPrescription.items?.map(item => (
+                       <li key={item.id}><strong>{item.medicationName}</strong> — {item.dosage}, {item.frequency}, {item.route} {item.duration ? `(${item.duration})` : ""} {item.notes && <em>- {item.notes}</em>}</li>
+                     ))}
+                   </ul>
+                </div>
+              ) : (
+                <p>No prescription was created for this visit.</p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="medical-card"><p>No medical report was created for this visit.</p></div>
+        )}
+      </>}
     </div>
   );
 }

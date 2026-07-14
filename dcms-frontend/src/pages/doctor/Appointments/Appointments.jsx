@@ -209,7 +209,7 @@ function Appointments() {
       />
 
       {loading ? (
-        <p>Loading appointments...</p>
+        <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading appointments...</div>
       ) : (
         <DataTable
           columns={columns}
@@ -218,14 +218,6 @@ function Appointments() {
             <div className="doctor-table-actions">
               <button onClick={() => navigate(`/doctor/appointments/${row.id}`)}>
                 View
-              </button>
-
-              <button onClick={() => navigate(`/doctor/patients/${row.patientId}`)}>
-                Record
-              </button>
-
-              <button onClick={() => navigate(`/doctor/prescriptions?patientId=${row.patientId}`)}>
-                Prescription
               </button>
             </div>
           )}

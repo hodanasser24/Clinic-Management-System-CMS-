@@ -4,6 +4,7 @@ import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
 import { registerPatient } from "../../services/authServices";
 import "./Register.css";
+import { getFriendlyErrorMessage } from "../../utils/errorMapper";
 
 function Register() {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ function Register() {
         navigate("/login");
       }, 2000);
     } catch (err) {
-      setError(err.message || "Registration failed.");
+      setError(getFriendlyErrorMessage(err));
     }
   }
 

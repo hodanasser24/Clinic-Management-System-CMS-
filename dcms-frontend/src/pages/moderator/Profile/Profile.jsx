@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import "./Profile.css";
 import apiClient from "../../../services/apiClient";
 import { getBranches } from "../../../services/publicServices";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 async function getAdminProfile() {
   const res = await apiClient.get("/api/Profile/admin");
@@ -33,7 +34,7 @@ function Profile() {
         phone: data.phone || ""
       });
     } catch (err) {
-      setError(err.message || "Failed to load profile");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -50,11 +51,11 @@ function Profile() {
       setIsEditing(false);
       loadProfile();
     } catch (err) {
-      setError(err.message || "Failed to update profile");
+      setError(getFriendlyErrorMessage(err));
     }
   };
 
-  if (loading) return <div className="profile-page"><p>Loading profile...</p></div>;
+  if (loading) return <div className="profile-page"><div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading profile...</div></div>;
 
   return (
     <div className="profile-page">

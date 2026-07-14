@@ -29,17 +29,26 @@ public class AppointmentService : IAppointmentService
         return MapToResponse(a);
     }
 
-    public async Task<PagedResultDto<AppointmentSummaryDto>> GetAllAsync(AppointmentQueryDto queryDto, CancellationToken ct = default)
+    private Expression<Func<Appointment, bool>> BuildPredicate(AppointmentQueryDto queryDto, int? forcedPatientId = null, int? forcedDoctorId = null)
     {
-        Expression<Func<Appointment, bool>> predicate = a =>
+        int? patientId = forcedPatientId ?? queryDto.PatientId;
+        int? doctorId = forcedDoctorId ?? queryDto.DoctorId;
+
+        return a =>
             (!queryDto.Id.HasValue || a.Id == queryDto.Id.Value) &&
+            (!patientId.HasValue || a.PatientId == patientId.Value) &&
             (string.IsNullOrEmpty(queryDto.PatientName) || (a.Patient != null && a.Patient.FullName.Contains(queryDto.PatientName))) &&
             (string.IsNullOrEmpty(queryDto.DoctorName) || (a.Doctor != null && a.Doctor.FullName.Contains(queryDto.DoctorName))) &&
             (string.IsNullOrEmpty(queryDto.PatientPhone) || (a.Patient != null && a.Patient.Phone != null && a.Patient.Phone.Contains(queryDto.PatientPhone))) &&
             (!queryDto.Status.HasValue || a.Status == queryDto.Status.Value) &&
-            (!queryDto.DoctorId.HasValue || a.DoctorId == queryDto.DoctorId.Value) &&
+            (!doctorId.HasValue || a.DoctorId == doctorId.Value) &&
             (!queryDto.FromDate.HasValue || a.Date >= queryDto.FromDate.Value) &&
             (!queryDto.ToDate.HasValue || a.Date <= queryDto.ToDate.Value);
+    }
+
+    public async Task<PagedResultDto<AppointmentSummaryDto>> GetAllAsync(AppointmentQueryDto queryDto, CancellationToken ct = default)
+    {
+        var predicate = BuildPredicate(queryDto);
 
         var paged = await _uow.Appointments.GetPagedWithDetailsAsync(
             queryDto.Page, queryDto.PageSize, predicate, queryDto.SortBy, queryDto.SortDescending, ct);
@@ -48,17 +57,25 @@ public class AppointmentService : IAppointmentService
     }
 
     public async Task<PagedResultDto<AppointmentSummaryDto>> GetByPatientAsync(
-        int patientId, int page, int pageSize, CancellationToken ct = default)
+        int patientId, AppointmentQueryDto queryDto, CancellationToken ct = default)
     {
-        var paged = await _uow.Appointments.GetByPatientWithDetailsAsync(patientId, page, pageSize, ct);
+        var predicate = BuildPredicate(queryDto, forcedPatientId: patientId);
+
+        var paged = await _uow.Appointments.GetPagedWithDetailsAsync(
+            queryDto.Page, queryDto.PageSize, predicate, queryDto.SortBy, queryDto.SortDescending, ct);
+
         return ToSummaryPaged(paged);
     }
 
     public async Task<PagedResultDto<AppointmentSummaryDto>> GetByDoctorAsync(
         int doctorId, AppointmentQueryDto queryDto, CancellationToken ct = default)
     {
-        queryDto.DoctorId = doctorId; // Enforce doctor scope
-        return await GetAllAsync(queryDto, ct);
+        var predicate = BuildPredicate(queryDto, forcedDoctorId: doctorId);
+
+        var paged = await _uow.Appointments.GetPagedWithDetailsAsync(
+            queryDto.Page, queryDto.PageSize, predicate, queryDto.SortBy, queryDto.SortDescending, ct);
+
+        return ToSummaryPaged(paged);
     }
 
     public async Task<PagedResultDto<AppointmentSummaryDto>> GetUrgentAsync(
@@ -366,21 +383,21 @@ public class AppointmentService : IAppointmentService
         if (a.Status != AppointmentStatus.Confirmed)
             throw new BusinessRuleException("Attendance can only be marked for confirmed appointments.");
 
-        // BR-37: validate that the appointment's date AND end-time have passed (UTC)
-        var nowUtc            = DateTime.UtcNow;
-        var appointmentEndUtc = a.Date.ToDateTime(a.EndTime, DateTimeKind.Utc);
+        // BR-37: validate that the appointment has started using clinic's local time
+        var nowLocal              = DateTime.Now;
+        var appointmentStartLocal = a.Date.ToDateTime(a.StartTime);
 
-        if (nowUtc < appointmentEndUtc)
+        if (nowLocal < appointmentStartLocal)
             throw new BusinessRuleException(
-                $"Attendance cannot be marked before the appointment ends " +
-                $"({a.Date:yyyy-MM-dd} at {a.EndTime}).");
+                $"Attendance cannot be marked before the appointment starts " +
+                $"({a.Date:yyyy-MM-dd} at {a.StartTime}).");
 
         a.AttendanceStatus = dto.AttendanceStatus;
 
         if (dto.AttendanceStatus == AttendanceStatus.Attended)
         {
             a.Status      = AppointmentStatus.Completed;
-            a.CompletedAt = nowUtc;
+            a.CompletedAt = DateTime.UtcNow; // Audit timestamp remains UTC
 
             // Track revenue record (Income requirement)
             if (a.Service != null)
@@ -396,6 +413,11 @@ public class AppointmentService : IAppointmentService
                 };
                 await _uow.Revenues.AddAsync(revenue, ct);
             }
+        }
+        else if (dto.AttendanceStatus == AttendanceStatus.Absent)
+        {
+            a.Status      = AppointmentStatus.Cancelled;
+            a.CancelledAt = DateTime.UtcNow;
         }
 
         await _uow.SaveChangesAsync(ct);

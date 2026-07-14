@@ -6,8 +6,8 @@ namespace DCMS.Application.Interfaces;
 
 public interface IReportService
 {
-    Task<ReportResponseDto>              GetByIdAsync(int id, UserRole callerRole, CancellationToken ct = default);
-    Task<PagedResultDto<ReportResponseDto>> GetByPatientAsync(int patientId, UserRole callerRole, int page, int pageSize, CancellationToken ct = default);
+    Task<ReportResponseDto>              GetByIdAsync(int id, UserRole callerRole, int? callerId = null, CancellationToken ct = default);
+    Task<PagedResultDto<ReportResponseDto>> GetByPatientAsync(int patientId, UserRole callerRole, int page, int pageSize, int? callerId = null, CancellationToken ct = default);
     Task<PagedResultDto<ReportResponseDto>> GetByDoctorAsync(int doctorId, int page, int pageSize, CancellationToken ct = default);
     Task<ReportResponseDto>              CreateAsync(CreateReportRequestDto dto, CancellationToken ct = default);
     Task<ReportResponseDto>              UpdateAsync(int id, UpdateReportRequestDto dto, int requestingDoctorId, CancellationToken ct = default);

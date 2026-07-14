@@ -158,7 +158,7 @@ function StaffManagement() {
       </div>
 
       {loading ? (
-        <p>Loading staff...</p>
+        <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading staff...</div>
       ) : (
         <DataTable
           columns={columns}

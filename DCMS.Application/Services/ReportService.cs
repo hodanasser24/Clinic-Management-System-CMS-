@@ -23,17 +23,25 @@ public class ReportService : IReportService
         _mapper              = mapper;
     }
 
-    public async Task<ReportResponseDto> GetByIdAsync(int id, UserRole callerRole, CancellationToken ct = default)
+    public async Task<ReportResponseDto> GetByIdAsync(int id, UserRole callerRole, int? callerId = null, CancellationToken ct = default)
     {
         var report = await _uow.Reports.GetByIdWithDetailsAsync(id, ct)
             ?? throw new NotFoundException($"Report {id} not found.");
+            
+        if (callerId.HasValue && (callerRole == UserRole.Doctor || callerRole == UserRole.Owner))
+        {
+            if (report.DoctorId != callerId.Value)
+                throw new ForbiddenException("You are only allowed to view your own reports.");
+        }
+
         return MapToResponse(report, callerRole);
     }
 
     public async Task<PagedResultDto<ReportResponseDto>> GetByPatientAsync(
-        int patientId, UserRole callerRole, int page, int pageSize, CancellationToken ct = default)
+        int patientId, UserRole callerRole, int page, int pageSize, int? callerId = null, CancellationToken ct = default)
     {
-        var paged = await _uow.Reports.GetByPatientWithDetailsAsync(patientId, page, pageSize, ct);
+        int? doctorIdFilter = (callerRole == UserRole.Doctor || callerRole == UserRole.Owner) ? callerId : null;
+        var paged = await _uow.Reports.GetByPatientWithDetailsAsync(patientId, page, pageSize, doctorIdFilter, ct);
         return new PagedResultDto<ReportResponseDto>
         {
             Items      = paged.Items.Select(r => MapToResponse(r, callerRole)).ToList(),
@@ -61,8 +69,8 @@ public class ReportService : IReportService
         var appointment = await _uow.Appointments.GetByIdAsync(dto.AppointmentId, ct)
             ?? throw new NotFoundException("Appointment not found.");
 
-        if (appointment.Status != AppointmentStatus.Completed)
-            throw new BusinessRuleException("Reports can only be created for completed appointments.");
+        if (appointment.Status != AppointmentStatus.Confirmed)
+            throw new BusinessRuleException("Reports can only be created for confirmed appointments.");
 
         if (appointment.PatientId != dto.PatientId)
             throw new BusinessRuleException("The report patient does not match the appointment patient.");
@@ -113,6 +121,10 @@ public class ReportService : IReportService
 
         if (report.DoctorId != requestingDoctorId)
             throw new ForbiddenException("Only the report's author can update it.");
+
+        var appointment = await _uow.Appointments.GetByIdAsync(report.AppointmentId, ct);
+        if (appointment == null || appointment.Status != AppointmentStatus.Confirmed)
+            throw new BusinessRuleException("Clinical data can only be edited during an active confirmed appointment.");
 
         report.Diagnosis            = dto.Diagnosis;
         report.Treatment            = dto.Treatment;

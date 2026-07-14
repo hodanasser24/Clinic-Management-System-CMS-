@@ -10,10 +10,13 @@ public class ReportRepository : GenericRepository<Report>, IReportRepository
     public ReportRepository(ApplicationDbContext context) : base(context) { }
 
     public async Task<PagedResult<Report>> GetByPatientAsync(
-        int patientId, int page, int pageSize, CancellationToken ct = default)
+        int patientId, int page, int pageSize, int? doctorId = null, CancellationToken ct = default)
     {
-        var query = _dbSet.Where(r => r.PatientId == patientId)
-                          .OrderByDescending(r => r.CreatedAt);
+        var query = _dbSet.Where(r => r.PatientId == patientId);
+        if (doctorId.HasValue)
+            query = query.Where(r => r.DoctorId == doctorId.Value);
+
+        query = query.OrderByDescending(r => r.CreatedAt);
         var total = await query.CountAsync(ct);
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
         return new PagedResult<Report>(items, total, page, pageSize);
@@ -41,11 +44,15 @@ public class ReportRepository : GenericRepository<Report>, IReportRepository
             .FirstOrDefaultAsync(r => r.Id == id, ct);
 
     public async Task<PagedResult<Report>> GetByPatientWithDetailsAsync(
-        int patientId, int page, int pageSize, CancellationToken ct = default)
+        int patientId, int page, int pageSize, int? doctorId = null, CancellationToken ct = default)
     {
         var query = WithDetails()
-            .Where(r => r.PatientId == patientId)
-            .OrderByDescending(r => r.CreatedAt);
+            .Where(r => r.PatientId == patientId);
+        
+        if (doctorId.HasValue)
+            query = query.Where(r => r.DoctorId == doctorId.Value);
+
+        query = query.OrderByDescending(r => r.CreatedAt);
         var total = await query.CountAsync(ct);
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
         return new PagedResult<Report>(items, total, page, pageSize);

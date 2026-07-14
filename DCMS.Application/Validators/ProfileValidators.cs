@@ -17,7 +17,7 @@ public class UpdatePatientProfileRequestValidator : AbstractValidator<UpdatePati
             .When(x => x.Phone != null);
 
         RuleFor(x => x.DateOfBirth)
-            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow))
+            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.Now))
             .WithMessage("Date of birth cannot be in the future.");
 
         RuleFor(x => x.MedicalHistory)

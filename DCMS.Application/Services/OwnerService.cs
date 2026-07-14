@@ -146,9 +146,11 @@ public class OwnerService : IOwnerService
     // ── Listing ───────────────────────────────────────────────────────────────
 
     public async Task<PagedResultDto<DoctorAccountResponseDto>> GetAllDoctorsAsync(
-        int page, int pageSize, CancellationToken ct = default)
+        string? searchTerm, int page, int pageSize, CancellationToken ct = default)
     {
-        var paged = await _uow.Doctors.GetPagedAsync(page, pageSize, ct: ct);
+        var paged = await _uow.Doctors.GetPagedAsync(page, pageSize, 
+            string.IsNullOrWhiteSpace(searchTerm) ? null : d => d.FullName.Contains(searchTerm) || d.Email.Contains(searchTerm) || (d.Phone != null && d.Phone.Contains(searchTerm)), 
+            ct: ct);
         return new PagedResultDto<DoctorAccountResponseDto>
         {
             Items      = _mapper.Map<List<DoctorAccountResponseDto>>(paged.Items),
@@ -225,7 +227,7 @@ public class OwnerService : IOwnerService
         if (offer.IsActive)
             throw new BusinessRuleException("Offer is already active.");
 
-        if (offer.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
+        if (offer.EndDate < DateOnly.FromDateTime(DateTime.Now))
             throw new BusinessRuleException("Cannot activate an expired offer.");
 
         offer.IsActive = true;

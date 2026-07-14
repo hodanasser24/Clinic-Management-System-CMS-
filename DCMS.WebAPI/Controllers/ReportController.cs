@@ -28,7 +28,7 @@ public class ReportController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
-        var result = await _reportService.GetByIdAsync(id, GetUserRole(), ct);
+        var result = await _reportService.GetByIdAsync(id, GetUserRole(), GetUserId(), ct);
         return Ok(result);
     }
 
@@ -39,7 +39,7 @@ public class ReportController : ControllerBase
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var result = await _reportService.GetByPatientAsync(patientId, GetUserRole(), page, pageSize, ct);
+        var result = await _reportService.GetByPatientAsync(patientId, GetUserRole(), page, pageSize, GetUserId(), ct);
         return Ok(result);
     }
 

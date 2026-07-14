@@ -205,7 +205,7 @@ function Patients() {
       </div>
 
       {loading ? (
-        <p>Loading patients...</p>
+        <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading patients...</div>
       ) : (
         <DataTable
           columns={columns}

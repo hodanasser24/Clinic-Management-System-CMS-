@@ -40,7 +40,7 @@ public class RegisterPatientRequestValidator : AbstractValidator<RegisterPatient
             .MaximumLength(20).WithMessage("Phone number must not exceed 20 characters.");
 
         RuleFor(x => x.DateOfBirth)
-            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow))
+            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.Now))
             .WithMessage("Date of birth cannot be in the future.");
 
         RuleFor(x => x.MedicalHistory)

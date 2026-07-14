@@ -7,6 +7,7 @@ using DCMS.Application.DTOs.Common;
 using DCMS.Domain.Entities;
 using DCMS.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 
 namespace DCMS.WebAPI.Controllers;
 
@@ -28,6 +29,21 @@ public class PatientController : ControllerBase
         _passwordHasher = passwordHasher;
     }
 
+    private int GetUserId() => int.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
+    private string GetUserRole() => User.FindFirstValue(System.Security.Claims.ClaimTypes.Role)!;
+
+    private async Task EnsureDoctorPatientAccessAsync(int patientId, CancellationToken ct)
+    {
+        var role = GetUserRole();
+        if (role == "Doctor" || role == "Owner")
+        {
+            var doctorId = GetUserId();
+            var appts = await _uow.Appointments.FindAsync(a => a.PatientId == patientId && a.DoctorId == doctorId, ct);
+            if (!appts.Any())
+                throw new ForbiddenException("You are only allowed to access your own patients.");
+        }
+    }
+
     /// <summary>
     /// Search patients by name, phone, or ID.
     /// SRS §4.2, §4.3: Admin and Doctor can search for patients.
@@ -37,11 +53,14 @@ public class PatientController : ControllerBase
         [FromQuery] PatientQueryDto query,
         CancellationToken ct)
     {
+        var role = GetUserRole();
+        int? doctorId = (role == "Doctor" || role == "Owner") ? GetUserId() : null;
+
         var paged = await _uow.Patients.GetQueriedPagedAsync(
             query.Page, query.PageSize,
             query.FullName, query.PhoneNumber, query.Id,
             query.BranchId, query.ServiceId,
-            query.SortBy, query.SortDescending, ct);
+            query.SortBy, query.SortDescending, doctorId, ct);
 
         var result = new PagedResultDto<PatientProfileResponseDto>
         {
@@ -75,6 +94,8 @@ public class PatientController : ControllerBase
     [HttpGet("{patientId:int}")]
     public async Task<IActionResult> GetProfile(int patientId, CancellationToken ct)
     {
+        await EnsureDoctorPatientAccessAsync(patientId, ct);
+
         var patient = await _uow.Patients.GetByIdAsync(patientId, ct)
             ?? throw new NotFoundException($"Patient {patientId} not found.");
 
@@ -106,7 +127,9 @@ public class PatientController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
-        var paged = await _uow.Reports.GetByPatientWithDetailsAsync(patientId, page, pageSize, ct);
+        await EnsureDoctorPatientAccessAsync(patientId, ct);
+
+        var paged = await _uow.Reports.GetByPatientWithDetailsAsync(patientId, page, pageSize, null, ct);
 
         return Ok(new
         {

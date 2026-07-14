@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import LoginForm from "../../components/forms/LoginForm";
 import { login } from "../../services/authServices";
 import "./Login.css";
+import { getFriendlyErrorMessage } from "../../utils/errorMapper";
 
 function Login() {
   const navigate = useNavigate();
@@ -37,7 +38,9 @@ function Login() {
       const result = await login({ email, password });
       setLoading(false);
       const role = result.role;
-      if (role === "Admin" || role === 3) {
+      if (result.isFirstLogin) {
+        navigate("/auth/change-password");
+      } else if (role === "Admin" || role === 3) {
         navigate("/moderator/dashboard");
       } else if (role === "Doctor" || role === "Owner" || role === 1 || role === 2) {
         navigate("/doctor/dashboard");
@@ -46,7 +49,7 @@ function Login() {
       }
     } catch (err) {
       setLoading(false);
-      setError(err.message || "Invalid credentials.");
+      setError(getFriendlyErrorMessage(err));
     }
   }
 

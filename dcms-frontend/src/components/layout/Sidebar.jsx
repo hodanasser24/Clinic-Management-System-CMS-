@@ -27,7 +27,6 @@ function Sidebar() {
         ["📅 Appointments", "/doctor/appointments"],
         ["👥 Patients", "/doctor/patients"],
         ["🦷 Medical Records", "/doctor/medical-records"],
-        ["💊 Prescriptions", "/doctor/prescriptions"],
         ["📊 Reports", "/doctor/reports"],
         ["🔔 Notifications", "/doctor/notifications"],
         ["👤 Profile", "/doctor/profile"],

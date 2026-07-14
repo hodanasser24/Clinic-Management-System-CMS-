@@ -61,7 +61,7 @@ public class ScheduleService : IScheduleService
         var activeSchedules = await _uow.Schedules.FindAsync(s => s.DoctorId == doctorId && s.BranchId == branchId && s.IsActive, ct);
         
         var availableDates = new List<DateOnly>();
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(DateTime.Now.Date);
         var endDate = today.AddDays(weeksToGenerate * 7);
 
         for (var date = today; date <= endDate; date = date.AddDays(1))

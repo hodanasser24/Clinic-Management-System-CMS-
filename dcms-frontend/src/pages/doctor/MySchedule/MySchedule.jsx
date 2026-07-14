@@ -4,6 +4,7 @@ import { getUserId } from "../../../services/authServices";
 import { formatTo12Hour } from "../../../utils/timeFormatter";
 import DataTable from "../../../components/common/DataTable/DataTable";
 import "./MySchedule.css";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 const daysOfWeek = [
   "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
@@ -40,7 +41,7 @@ function MySchedule() {
         setSchedules(schedulesRes.data?.items || []);
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to load schedules.");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -79,7 +80,7 @@ function MySchedule() {
         sessionDurationMinutes: 30
       });
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to create schedule.");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -97,7 +98,7 @@ function MySchedule() {
       });
       await loadData();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to deactivate schedule.");
+      setError(getFriendlyErrorMessage(err));
     }
   };
 
@@ -113,7 +114,7 @@ function MySchedule() {
       });
       await loadData();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to reactivate schedule.");
+      setError(getFriendlyErrorMessage(err));
     }
   };
 
@@ -154,7 +155,7 @@ function MySchedule() {
       <div className="schedule-page">
         <div className="schedule-header">
           <h1>My Schedule</h1>
-          <p>Loading your schedules...</p>
+          <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading your schedules...</div>
         </div>
       </div>
     );

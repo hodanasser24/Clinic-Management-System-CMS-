@@ -35,7 +35,7 @@ function Reports() {
       <p>Overview of your daily and weekly performance.</p>
 
       {loading ? (
-        <p>Loading reports...</p>
+        <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading reports...</div>
       ) : (
         <div className="reports-grid">
           {reports.map((item) => (

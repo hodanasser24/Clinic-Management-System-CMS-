@@ -76,7 +76,7 @@ function Notifications() {
     }
   };
 
-  if (loading && notifications.length === 0) return <div className="notifications-page"><p>Loading notifications...</p></div>;
+  if (loading && notifications.length === 0) return <div className="notifications-page"><div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading notifications...</div></div>;
   if (error && notifications.length === 0) return <div className="notifications-page"><p className="error">{error}</p></div>;
 
   return (

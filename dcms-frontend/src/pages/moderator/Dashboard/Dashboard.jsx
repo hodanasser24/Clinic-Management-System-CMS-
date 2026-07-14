@@ -18,12 +18,19 @@ function Dashboard() {
         const today = new Date().toISOString().slice(0, 10);
         const [statsRes, appointmentsRes, patientsRes, dailyRes] = await Promise.all([
           apiClient.get("/api/Dashboard/summary"),
-          apiClient.get("/api/Appointment?page=1&pageSize=5"),
+          apiClient.get(`/api/Appointment?FromDate=${today}&ToDate=${today}&page=1&pageSize=100`),
           apiClient.get("/api/patients/search?page=1&pageSize=5"),
           apiClient.get(`/api/Dashboard/daily?date=${today}`),
         ]);
         setStats(statsRes.data);
-        setRecentAppointments(appointmentsRes.data.items || []);
+        const validAppointments = (appointmentsRes.data.items || [])
+          .filter(a => a.status === "Pending" || a.status === "Confirmed" || a.status === "Completed")
+          .sort((a, b) => {
+             const timeA = a.startTime ? a.startTime.split(':').join('') : '999999';
+             const timeB = b.startTime ? b.startTime.split(':').join('') : '999999';
+             return timeA.localeCompare(timeB);
+          });
+        setRecentAppointments(validAppointments);
         setRecentPatients(patientsRes.data.items || []);
         setDailyReport(dailyRes.data);
       } catch (error) {
@@ -42,7 +49,7 @@ function Dashboard() {
   ];
 
   if (loading) {
-    return <div className="dashboard-page">Loading...</div>;
+    return <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading...</div>;
   }
 
   return (
@@ -89,21 +96,21 @@ function Dashboard() {
 
       <div className="dashboard-grid">
         <div className="dashboard-section">
-          <h2>Recent Appointments</h2>
+          <h2>Today's Schedule</h2>
           {recentAppointments.length > 0 ? (
             recentAppointments.map((item) => (
               <div className="mini-row" key={item.id}>
                 <div>
                   <strong>{item.patientName}</strong>
                   <p>
-                    {item.doctorName} • {formatTo12Hour(item.startTime)}
+                    Dr. {item.doctorName} • {formatTo12Hour(item.startTime)} - {formatTo12Hour(item.endTime)}
                   </p>
                 </div>
-                <span>{item.status}</span>
+                <span className={`status-badge ${item.status.toLowerCase()}`}>{item.status}</span>
               </div>
             ))
           ) : (
-            <p>No recent appointments.</p>
+            <p>No appointments today.</p>
           )}
         </div>
 

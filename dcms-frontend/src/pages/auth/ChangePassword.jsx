@@ -2,16 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button/Button";
 import Input from "../../components/common/Input";
-import { resetPassword } from "../../services/authServices";
+import { changePassword, logout } from "../../services/authServices";
 import "./Login.css";
 import { getFriendlyErrorMessage } from "../../utils/errorMapper";
 
-function ResetPassword() {
+function ChangePassword() {
   const navigate = useNavigate();
   const [isDark, setIsDark] = useState(true);
   const [formData, setFormData] = useState({
-    email: "",
-    token: "",
+    currentPassword: "",
     newPassword: "",
   });
   const [error, setError] = useState("");
@@ -32,15 +31,19 @@ function ResetPassword() {
     setError("");
     setMessage("");
 
-    if (!formData.email || !formData.token || !formData.newPassword) {
+    if (!formData.currentPassword || !formData.newPassword) {
       setError("Please fill all required fields.");
       return;
     }
 
     try {
-      await resetPassword(formData);
+      await changePassword(formData);
       setSuccess(true);
-      setMessage("Password reset successful! Redirecting to login...");
+      setMessage("Password changed successfully! Redirecting to login...");
+      
+      // Clear token and state so the user is forced to re-login with the new password
+      await logout();
+      
       setTimeout(() => {
         navigate("/login");
       }, 2000);
@@ -56,13 +59,13 @@ function ResetPassword() {
           <div className="brand-icon">🦷</div>
           <div>
             <h1>DCMS</h1>
-            <p>Reset your password</p>
+            <p>Change your password</p>
           </div>
         </div>
 
         <div className="auth-header">
-          <h2>Reset Password</h2>
-          <p>Enter the token sent to your email and your new password.</p>
+          <h2>Change Password</h2>
+          <p>This is your first time logging in, or a password change is required.</p>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
@@ -70,16 +73,10 @@ function ResetPassword() {
           {success && <div className="auth-success" style={{color: "#2ec4b6", backgroundColor: "rgba(46, 196, 182, 0.1)", padding: "0.75rem", borderRadius: "8px", marginBottom: "1rem", textAlign: "center"}}>{message}</div>}
 
           <Input
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-          />
-          <Input
-            label="Reset Token"
-            name="token"
-            value={formData.token}
+            label="Current Password"
+            name="currentPassword"
+            type="password"
+            value={formData.currentPassword}
             onChange={handleChange}
           />
           <Input
@@ -90,11 +87,7 @@ function ResetPassword() {
             onChange={handleChange}
           />
 
-          <Button type="submit">Reset Password →</Button>
-
-          <p className="auth-switch">
-            Back to <a href="/login">Login</a>
-          </p>
+          <Button type="submit">Change Password →</Button>
         </form>
 
         <button
@@ -107,13 +100,13 @@ function ResetPassword() {
 
       <section className="auth-hero">
         <div className="hero-content">
-          <span>New Password</span>
-          <h2>Keep your account protected.</h2>
-          <p>Use a strong password to secure your dental clinic account.</p>
+          <span>Security First</span>
+          <h2>Secure your account.</h2>
+          <p>Update your temporary password to a secure one before accessing your dashboard.</p>
         </div>
       </section>
     </main>
   );
 }
 
-export default ResetPassword;
+export default ChangePassword;

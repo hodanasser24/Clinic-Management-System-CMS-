@@ -31,23 +31,24 @@ export async function getPatientDentalChart(patientId) {
   return fetchWithAuth(`/DentalChart/${patientId}`);
 }
 
-export async function updateChartNotes(patientId, notes) {
+export async function updateChartNotes(patientId, appointmentId, notes) {
   return fetchWithAuth(`/DentalChart/${patientId}/notes`, {
     method: "PUT",
-    body: JSON.stringify({ notes }),
+    body: JSON.stringify({ appointmentId, notes }),
   });
 }
 
 export async function upsertToothRecord(patientId, data) {
+  // data must include appointmentId
   return fetchWithAuth(`/DentalChart/${patientId}/tooth`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 }
 
-export async function bulkUpsertToothRecords(patientId, records) {
+export async function bulkUpsertToothRecords(patientId, appointmentId, records) {
   return fetchWithAuth(`/DentalChart/${patientId}/bulk`, {
     method: "PUT",
-    body: JSON.stringify({ records }),
+    body: JSON.stringify({ appointmentId, records }),
   });
 }

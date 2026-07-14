@@ -11,6 +11,7 @@ import Pagination from "../../../components/common/Pagination/Pagination";
 import CancelModal from "../../../components/ui/CancelModal/CancelModal";
 import { getAllAppointments, cancelAppointment } from "../../../services/appointmentServices";
 import { getDoctors } from "../../../services/publicServices";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 function Appointments() {
   const navigate = useNavigate();
@@ -42,7 +43,9 @@ function Appointments() {
   const [appointmentToCancel, setAppointmentToCancel] = useState(null);
 
   // States
-  const [searchQuery, setSearchQuery] = useState("");
+  const [dateQuery, setDateQuery] = useState("");
+  const [patientQuery, setPatientQuery] = useState("");
+  const [modalError, setModalError] = useState("");
   const [doctorFilter, setDoctorFilter] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,9 +63,12 @@ function Appointments() {
         sortDescending: sortBy !== "oldest",
       };
 
-      if (searchQuery) {
-        params.fromDate = searchQuery;
-        params.toDate = searchQuery;
+      if (dateQuery) {
+        params.fromDate = dateQuery;
+        params.toDate = dateQuery;
+      }
+      if (patientQuery) {
+        params.patientName = patientQuery;
       }
 
       const data = await getAllAppointments(params);
@@ -77,7 +83,7 @@ function Appointments() {
 
   useEffect(() => {
     fetchAppointments();
-  }, [currentPage, activeTab, doctorFilter, searchQuery, sortBy]);
+  }, [currentPage, activeTab, doctorFilter, dateQuery, patientQuery, sortBy]);
 
   useEffect(() => {
     getDoctors().then((data) => setDoctors(data || [])).catch((error) => console.error("Failed to fetch doctors", error));
@@ -85,6 +91,7 @@ function Appointments() {
 
   const initiateCancel = (id) => {
     setAppointmentToCancel(id);
+    setModalError("");
     setCancelModalOpen(true);
   };
 
@@ -93,11 +100,10 @@ function Appointments() {
       await cancelAppointment(appointmentToCancel, reason);
       setCancelModalOpen(false);
       setAppointmentToCancel(null);
+      setModalError("");
       fetchAppointments();
     } catch (err) {
-      const errData = err.response?.data;
-      const errorMsg = errData?.message || errData?.detail || err.message || "Unknown error";
-      alert("Cancellation failed: " + errorMsg);
+      setModalError(getFriendlyErrorMessage(err));
     }
   };
 
@@ -125,17 +131,33 @@ function Appointments() {
 
       <div className="appointments-toolbar">
         <div className="search-input">
-          <span>📅</span>
+          <span>🔍</span>
           <input
-            type="date"
-            value={searchQuery}
+            type="text"
+            placeholder="Search Patient Name..."
+            value={patientQuery}
             onChange={(e) => {
-              setSearchQuery(e.target.value);
+              setPatientQuery(e.target.value);
               setCurrentPage(1);
             }}
           />
-          {searchQuery && (
-            <button onClick={() => { setSearchQuery(""); setCurrentPage(1); }}>Clear</button>
+          {patientQuery && (
+            <button onClick={() => { setPatientQuery(""); setCurrentPage(1); }}>Clear</button>
+          )}
+        </div>
+
+        <div className="search-input">
+          <span>📅</span>
+          <input
+            type="date"
+            value={dateQuery}
+            onChange={(e) => {
+              setDateQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+          {dateQuery && (
+            <button onClick={() => { setDateQuery(""); setCurrentPage(1); }}>Clear</button>
           )}
         </div>
 
@@ -210,9 +232,11 @@ function Appointments() {
 
       <CancelModal
         isOpen={cancelModalOpen}
+        errorMessage={modalError}
         onClose={() => {
           setCancelModalOpen(false);
           setAppointmentToCancel(null);
+          setModalError("");
         }}
         onConfirm={handleCancel}
       />

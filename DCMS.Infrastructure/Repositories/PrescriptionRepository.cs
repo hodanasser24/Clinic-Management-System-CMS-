@@ -26,13 +26,17 @@ public class PrescriptionRepository : GenericRepository<Prescription>, IPrescrip
             .FirstOrDefaultAsync(p => p.ReportId == reportId, ct);
     }
 
-    public async Task<PagedResult<Prescription>> GetByPatientWithDetailsAsync(int patientId, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResult<Prescription>> GetByPatientWithDetailsAsync(int patientId, int page, int pageSize, int? doctorId = null, CancellationToken ct = default)
     {
         var query = _dbSet
             .Include(p => p.Items)
             .Include(p => p.Report)
-            .Where(p => p.Report.PatientId == patientId)
-            .OrderByDescending(p => p.CreatedAt)
+            .Where(p => p.Report.PatientId == patientId);
+
+        if (doctorId.HasValue)
+            query = query.Where(p => p.Report.DoctorId == doctorId.Value);
+
+        query = query.OrderByDescending(p => p.CreatedAt)
             .AsNoTracking();
 
         var total = await query.CountAsync(ct);

@@ -119,7 +119,7 @@ function Patients() {
       </div>
 
       {loading ? (
-        <p>Loading patients...</p>
+        <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading patients...</div>
       ) : (
         <DataTable
           columns={columns}
@@ -128,14 +128,6 @@ function Patients() {
             <div className="doctor-patient-actions">
               <button onClick={() => navigate(`/doctor/patients/${row.id}`)}>
                 View
-              </button>
-
-              <button onClick={() => navigate(`/doctor/medical-records?patientId=${row.id}`)}>
-                Records
-              </button>
-
-              <button onClick={() => navigate(`/doctor/prescriptions?patientId=${row.id}`)}>
-                Prescription
               </button>
             </div>
           )}

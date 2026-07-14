@@ -92,7 +92,7 @@ function Reports() {
       {error && <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>}
 
       {loading ? (
-        <p>Loading reports...</p>
+        <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading reports...</div>
       ) : (
         <>
           <div className="report-cards">
@@ -103,7 +103,7 @@ function Reports() {
 
             <div className="report-card">
               <h3>Completed</h3>
-              <span>{summary?.confirmedAppointments ?? summary?.completedAppointments ?? 0}</span>
+              <span>{dailyReports.filter(a => a.status === "Completed").length}</span>
             </div>
 
             <div className="report-card">

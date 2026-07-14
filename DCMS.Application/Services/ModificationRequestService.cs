@@ -386,8 +386,8 @@ public class ModificationRequestService : IModificationRequestService
                 Title              = r.ProposedTitle ?? "New Offer",
                 Description        = r.ProposedDescription,
                 DiscountPercentage = r.ProposedDiscountPercentage ?? 0,
-                StartDate          = r.ProposedStartDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
-                EndDate            = r.ProposedEndDate   ?? DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+                StartDate          = r.ProposedStartDate ?? DateOnly.FromDateTime(DateTime.Now),
+                EndDate            = r.ProposedEndDate   ?? DateOnly.FromDateTime(DateTime.Now.AddMonths(1)),
                 BranchId           = r.ProposedBranchId  ?? 0,
                 ServiceId          = r.ProposedServiceId,
                 IsActive           = false

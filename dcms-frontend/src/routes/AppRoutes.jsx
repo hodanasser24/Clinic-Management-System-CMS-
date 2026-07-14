@@ -12,6 +12,7 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
+import ChangePassword from "../pages/auth/ChangePassword";
 
 // Patient
 import PatientDashboard from "../pages/patient/PatientDashboard/PatientDashboard";
@@ -42,7 +43,7 @@ import DoctorAppointmentDetails from "../pages/doctor/AppointmentDetails/Appoint
 import DoctorPatients from "../pages/doctor/Patients/Patients";
 import DoctorPatientDetails from "../pages/doctor/PatientDetails/PatientDetails";
 import MedicalRecords from "../pages/doctor/MedicalRecords/MedicalRecords";
-import Prescriptions from "../pages/doctor/Prescriptions/Prescriptions";
+
 import DoctorReports from "../pages/doctor/Reports/Reports";
 import DoctorNotifications from "../pages/doctor/Notifications/Notifications";
 import DoctorProfile from "../pages/doctor/Profile/Profile";
@@ -67,6 +68,7 @@ function AppRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/auth/change-password" element={<ChangePassword />} />
 
         {/* Base Path Redirects */}
         <Route path="/patient" element={<Navigate to="/patient/dashboard" replace />} />
@@ -292,14 +294,7 @@ function AppRoutes() {
           }
         />
 
-        <Route
-          path="/doctor/prescriptions"
-          element={
-            <DashboardLayout>
-              <Prescriptions />
-            </DashboardLayout>
-          }
-        />
+
 
         <Route
           path="/doctor/reports"

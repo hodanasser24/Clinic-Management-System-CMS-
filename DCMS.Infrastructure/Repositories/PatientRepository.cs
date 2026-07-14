@@ -16,10 +16,13 @@ public class PatientRepository : GenericRepository<Patient>, IPatientRepository
         int page, int pageSize,
         string? name, string? phone, int? id,
         int? branchId, int? serviceId,
-        string? sortBy, bool sortDescending,
+        string? sortBy, bool sortDescending, int? doctorId = null,
         CancellationToken ct = default)
     {
         var query = _dbSet.AsNoTracking().Where(p => p.IsActive);
+
+        if (doctorId.HasValue)
+            query = query.Where(p => p.Appointments.Any(a => a.DoctorId == doctorId.Value));
 
         if (id.HasValue)
             query = query.Where(p => p.Id == id.Value);

@@ -11,7 +11,7 @@ public class AppointmentRequestValidator : AbstractValidator<AppointmentRequestD
         RuleFor(x => x.BranchId).GreaterThan(0).WithMessage("BranchId must be a valid ID.");
         RuleFor(x => x.ServiceId).GreaterThan(0).WithMessage("ServiceId must be a valid ID.");
         RuleFor(x => x.Date)
-            .Must(d => d >= DateOnly.FromDateTime(DateTime.UtcNow))
+            .Must(d => d >= DateOnly.FromDateTime(DateTime.Now))
             .WithMessage("Appointment date cannot be in the past.");
         // BR-52: Notes max 1000 chars
         RuleFor(x => x.Notes)
@@ -25,7 +25,7 @@ public class RescheduleAppointmentValidator : AbstractValidator<RescheduleAppoin
     public RescheduleAppointmentValidator()
     {
         RuleFor(x => x.NewDate)
-            .Must(d => d >= DateOnly.FromDateTime(DateTime.UtcNow))
+            .Must(d => d >= DateOnly.FromDateTime(DateTime.Now))
             .WithMessage("New date cannot be in the past.");
     }
 }

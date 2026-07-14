@@ -38,9 +38,9 @@ public class OwnerController : ControllerBase
     }
 
     [HttpGet("doctors")]
-    public async Task<IActionResult> GetAllDoctors([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    public async Task<IActionResult> GetAllDoctors([FromQuery] string? searchTerm, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
-        var result = await _ownerService.GetAllDoctorsAsync(page, pageSize, ct);
+        var result = await _ownerService.GetAllDoctorsAsync(searchTerm, page, pageSize, ct);
         return Ok(result);
     }
 

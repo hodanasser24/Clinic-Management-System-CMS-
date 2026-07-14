@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getPatientProfile, updatePatientProfile } from "../../../services/profileServices";
 import "./Profile.css";
+import { getFriendlyErrorMessage } from "../../../utils/errorMapper";
 
 function Profile() {
   const [profile, setProfile] = useState(null);
@@ -29,7 +30,7 @@ function Profile() {
         allergies: data.allergies || "",
       });
     } catch (err) {
-      setError(err.message || "Failed to load profile.");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -42,11 +43,11 @@ function Profile() {
       setIsEditing(false);
       loadProfile(); // Refresh data
     } catch (err) {
-      setError(err.message || "Failed to update profile.");
+      setError(getFriendlyErrorMessage(err));
     }
   };
 
-  if (loading) return <div className="patient-profile-page"><h1>My Profile</h1><p>Loading profile...</p></div>;
+  if (loading) return <div className="patient-profile-page"><h1>My Profile</h1><div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>Loading profile...</div></div>;
 
   return (
     <div className="patient-profile-page">

@@ -21,12 +21,18 @@ public class DashboardController : ControllerBase
         _currentUser = currentUser;
     }
 
+    private int? GetOwnerIdFilter()
+    {
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        return role == "Owner" ? _currentUser.UserId : null;
+    }
+
     /// <summary>High-level clinic summary: appointment counts, revenue, pending items.</summary>
     [HttpGet("summary")]
     [Authorize(Roles = "Admin,Owner")]
     public async Task<IActionResult> Summary(CancellationToken ct)
     {
-        var result = await _dashboardService.GetSummaryAsync(ct);
+        var result = await _dashboardService.GetSummaryAsync(GetOwnerIdFilter(), ct);
         return Ok(result);
     }
 
@@ -35,7 +41,7 @@ public class DashboardController : ControllerBase
     [Authorize(Roles = "Admin,Owner")]
     public async Task<IActionResult> DailyReport([FromQuery] DateOnly date, CancellationToken ct)
     {
-        var result = await _dashboardService.GetDailyReportAsync(date, ct);
+        var result = await _dashboardService.GetDailyReportAsync(date, GetOwnerIdFilter(), ct);
         return Ok(result);
     }
 
@@ -45,7 +51,7 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> WeeklyReport(
         [FromQuery] DateOnly weekStart, CancellationToken ct)
     {
-        var result = await _dashboardService.GetWeeklyReportAsync(weekStart, ct);
+        var result = await _dashboardService.GetWeeklyReportAsync(weekStart, GetOwnerIdFilter(), ct);
         return Ok(result);
     }
 
@@ -54,7 +60,7 @@ public class DashboardController : ControllerBase
     [Authorize(Roles = "Admin,Owner")]
     public async Task<IActionResult> ExportDaily([FromQuery] DateOnly date, CancellationToken ct)
     {
-        var bytes = await _dashboardService.ExportDailyReportAsCsvAsync(date, ct);
+        var bytes = await _dashboardService.ExportDailyReportAsCsvAsync(date, GetOwnerIdFilter(), ct);
         return File(bytes, "text/csv", $"daily-report-{date:yyyy-MM-dd}.csv");
     }
 
@@ -64,7 +70,7 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> ExportWeekly(
         [FromQuery] DateOnly weekStart, CancellationToken ct)
     {
-        var bytes = await _dashboardService.ExportWeeklyReportAsCsvAsync(weekStart, ct);
+        var bytes = await _dashboardService.ExportWeeklyReportAsCsvAsync(weekStart, GetOwnerIdFilter(), ct);
         return File(bytes, "text/csv", $"weekly-report-{weekStart:yyyy-MM-dd}.csv");
     }
 
