@@ -29,8 +29,10 @@ export async function getDoctorAppointments(doctorId, params = {}) {
   if (params.status !== undefined && params.status !== "") query.append("status", params.status);
   if (params.fromDate) query.append("fromDate", params.fromDate);
   if (params.toDate) query.append("toDate", params.toDate);
+  if (params.patientName) query.append("patientName", params.patientName);
   if (params.sortBy) query.append("sortBy", params.sortBy);
-  query.append("sortDescending", "true");
+  if (params.sortDescending !== undefined) query.append("sortDescending", params.sortDescending);
+  if (params.sortDescending === undefined) query.append("sortDescending", "true");
 
   const queryString = query.toString() ? `?${query.toString()}` : "";
   const res = await apiClient.get(`/api/Appointment/by-doctor/${doctorId}${queryString}`);

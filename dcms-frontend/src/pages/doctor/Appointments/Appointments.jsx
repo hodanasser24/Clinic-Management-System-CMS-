@@ -59,7 +59,7 @@ function Appointments() {
         // In a perfect world we'd pass multiple statuses (Pending/Confirmed), but DTO only takes one.
         // We'll rely on fromDate for upcoming.
       } else if (activeTab === "Completed") {
-        params.status = 2; // Assuming 2 is Completed
+        params.status = 4; // 4 is Completed
       } else if (activeTab === "Cancelled") {
         params.status = 3; // Assuming 3 is Cancelled
       }
@@ -120,12 +120,14 @@ function Appointments() {
     switch (statusValue) {
       case 0: return "Pending";
       case 1: return "Confirmed";
-      case 2: return "Completed";
+      case 2: return "Rejected";
       case 3: return "Cancelled";
+      case 4: return "Completed";
       case "Pending": return "Pending";
       case "Confirmed": return "Confirmed";
-      case "Completed": return "Completed";
+      case "Rejected": return "Rejected";
       case "Cancelled": return "Cancelled";
+      case "Completed": return "Completed";
       default: return "Unknown";
     }
   }
@@ -158,8 +160,9 @@ function Appointments() {
             { value: "", label: "All Status" },
             { value: "0", label: "Pending" },
             { value: "1", label: "Confirmed" },
-            { value: "2", label: "Completed" },
+            { value: "2", label: "Rejected" },
             { value: "3", label: "Cancelled" },
+            { value: "4", label: "Completed" },
           ]}
         />
 
