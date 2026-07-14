@@ -278,13 +278,6 @@ http://localhost:5173
 
 ---
 
-# 🔐 Default Accounts
-
-| Role | Email |
-|------|-------|
-| Owner | owner@clinic.com |
-| Admin | admin@clinic.com |
-| Doctor | doctor@clinic.com |
 
 > Default passwords can be configured through the seed configuration.
 
